@@ -565,13 +565,13 @@
                 };
             }
 
-            // 加載地點數據 - 默認KT（觀塘）、TST（尖沙咀）
+            // 加載地點數據 - 默認KT（啟德）、TST（尖沙咀）
             const savedLocs = localStorage.getItem('locations');
             if (savedLocs) {
                 locations = JSON.parse(savedLocs);
             } else {
                 locations = {
-                    "KT": "觀塘",
+                    "KT": "啟德",
                     "TST": "尖沙咀"
                 };
             }
@@ -937,3 +937,4 @@
     </script>
 </body>
 </html>
+
