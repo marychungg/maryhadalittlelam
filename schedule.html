@@ -16,19 +16,19 @@
             padding: 15px;
             min-height: 100vh;
         }
-        /* 頁面切換按鈕 */
+        /* 頁面切換按鈕 - 改為3個（排班+班次+地點） */
         .page-tabs {
             max-width: 600px;
             margin: 0 auto 15px;
             display: flex;
-            gap: 10px;
+            gap: 8px;
         }
         .tab-btn {
             flex: 1;
-            padding: 12px;
+            padding: 10px;
             border: none;
             border-radius: 10px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.3s;
@@ -55,7 +55,7 @@
         .container.active {
             display: block;
         }
-        /* 月曆頁面樣式 - 所有月份完全統一 */
+        /* 月曆頁面樣式 - 核心不溢出 */
         .calendar-header {
             background-color: #ffb74d;
             color: white;
@@ -113,42 +113,42 @@
             border-bottom: 1px solid #ffe0b2;
         }
         .weekday {
-            padding: 10px 0;
+            padding: 8px 0;
             text-align: center;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             color: #f57c00;
         }
         .weekday.sun {
             color: #e53935; /* 周日紅色 */
         }
-        /* 核心：固定高度，內容不溢出 */
+        /* 日期容器 - 固定高度不溢出 */
         .days {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             gap: 6px;
-            padding: 12px;
-            grid-auto-rows: 115px;
+            padding: 10px;
+            grid-auto-rows: 95px;
         }
-        /* 日期框：整框配色，默認色，溢出隱藏 */
+        /* 日期框 - 極致壓縮間距 */
         .day {
             border-radius: 8px;
-            padding: 7px 5px;
+            padding: 4px 3px;
             border: 1px solid #ffe0b2;
             transition: all 0.2s ease;
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
-            gap: 7px;
+            gap: 2px;
             background: #fff8f0;
             overflow: hidden;
         }
-        /* 時段配色 - 整框應用 */
-        .day.bg-holiday { background: #f5e9d7; border-color: #e8d4b9; } /* 放假淺啡 */
-        .day.bg-morning { background: #fce4ec; border-color: #f8bbd0; } /* 早更粉紅 */
-        .day.bg-noon { background: #e8d9c8; border-color: #d2b48c; }   /* 午間深啡 */
-        .day.bg-night { background: #e3eaf5; border-color: #bdd0eb; }  /* 晚間深藍 */
-        .day.bg-other { background: #e8f5e9; border-color: #c8e6c9; }  /* 其他淺綠 */
+        /* 時段配色 */
+        .day.bg-holiday { background: #f5e9d7; border-color: #e8d4b9; }
+        .day.bg-morning { background: #fce4ec; border-color: #f8bbd0; }
+        .day.bg-noon { background: #e8d9c8; border-color: #d2b48c; }
+        .day.bg-night { background: #e3eaf5; border-color: #bdd0eb; }
+        .day.bg-other { background: #e8f5e9; border-color: #c8e6c9; }
         .day:hover {
             border-color: #ffb74d;
             transform: translateY(-1px);
@@ -157,7 +157,7 @@
             background: transparent;
             border: none;
         }
-        .day.expired { /* 過期色強制覆蓋 */
+        .day.expired {
             background: #f5f5f5 !important;
             border-color: #e0e0e0 !important;
             opacity: 0.6;
@@ -165,52 +165,77 @@
             overflow: hidden;
         }
         .date {
-            font-size: 15px;
+            font-size: 13px;
             font-weight: bold;
             color: #f57c00;
             text-align: center;
             line-height: 1;
             flex-shrink: 0;
+            height: 16px;
         }
         .shift-select {
             width: 100%;
             border: 1px solid #ddd;
-            border-radius: 6px;
-            padding: 5px 3px;
+            border-radius: 4px;
+            padding: 2px 1px;
             text-align: center;
-            font-size: 13px;
+            font-size: 11px;
             background: rgba(255,255,255,0.9);
             transition: all 0.2s;
             outline: none;
             color: #333;
             flex-shrink: 0;
+            height: 20px;
         }
         .shift-select:focus {
             border-color: #ffb74d;
             background: #fff;
         }
-        /* 班次信息：移除分隔符，班次粗體區分時間 */
+        /* 班次信息 */
         .shift-info {
-            font-size: 11px;
+            font-size: 9px;
             color: #333;
             text-align: center;
-            line-height: 1.5;
+            line-height: 1.2;
             flex-grow: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            gap: 4px;
+            gap: 1px;
             word-wrap: break-word;
             white-space: normal;
         }
         .s-code {
-            font-weight: 700; /* 班次粗體核心 */
-            font-size: 12px;
+            font-weight: 700;
+            font-size: 10px;
+        }
+        .s-code.blue {
+            color: blue !important;
         }
         .s-time {
             font-weight: 400;
         }
-        /* 按鈕樣式 */
+        /* 地點按鈕 - 核心：預設白色底KT，點擊橙色底TST（無重複） */
+        .loc-btn {
+            width: 100%;
+            padding: 1px 0;
+            border: 1px solid #ff9800;
+            border-radius: 3px;
+            font-size: 9px;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            height: 16px;
+            /* 預設樣式：白色底+KT字樣 */
+            background: #fff;
+            color: #ff9800;
+        }
+        /* 激活樣式：橙色底+TST字樣 */
+        .loc-btn.active {
+            background: #ff9800;
+            color: white;
+        }
+        /* 按鈕通用樣式 */
         .btn-save {
             display: block;
             width: 90%;
@@ -228,7 +253,7 @@
         .btn-save:hover {
             background: #8c6d53;
         }
-        /* 班次管理頁面 - 新增配色選擇器，樣式優化 */
+        /* 班次管理頁面 - 不變 */
         .manage-header {
             background-color: #ffb74d;
             color: white;
@@ -289,12 +314,12 @@
         .btn-add:hover {
             background: #8c6d53;
         }
-        .shift-list {
+        .shift-list, .location-list {
             padding: 15px;
             max-height: 400px;
             overflow-y: auto;
         }
-        .shift-item {
+        .shift-item, .location-item {
             border-radius: 8px;
             padding: 12px 15px;
             margin-bottom: 10px;
@@ -310,19 +335,19 @@
         .shift-item.bg-noon { background: #e8d9c8; border-color: #d2b48c; }
         .shift-item.bg-night { background: #e3eaf5; border-color: #bdd0eb; }
         .shift-item.bg-other { background: #e8f5e9; border-color: #c8e6c9; }
-        .shift-item-info {
+        .shift-item-info, .location-item-info {
             display: flex;
             flex-direction: column;
             gap: 3px;
             align-items: flex-start;
             flex-grow: 1;
         }
-        .shift-item-code {
+        .shift-item-code, .location-item-code {
             font-size: 16px;
             font-weight: 700;
             color: #333;
         }
-        .shift-item-time {
+        .shift-item-time, .location-item-desc {
             font-size: 13px;
             color: #666;
         }
@@ -330,12 +355,12 @@
             font-size: 12px;
             color: #888;
         }
-        .shift-actions {
+        .shift-actions, .location-actions {
             display: flex;
             gap: 8px;
             flex-shrink: 0;
         }
-        .btn-edit, .btn-delete {
+        .btn-edit, .btn-delete, .loc-btn-edit, .loc-btn-delete {
             padding: 5px 10px;
             border: none;
             border-radius: 6px;
@@ -343,80 +368,78 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        .btn-edit {
+        .btn-edit, .loc-btn-edit {
             background: #e3f2fd;
             color: #2196f3;
         }
-        .btn-edit:hover {
+        .btn-edit:hover, .loc-btn-edit:hover {
             background: #bbdefb;
         }
-        .btn-delete {
+        .btn-delete, .loc-btn-delete {
             background: #ffebee;
             color: #e53935;
         }
-        .btn-delete:hover {
+        .btn-delete:hover, .loc-btn-delete:hover {
             background: #ffcdd2;
         }
-        .btn-save-shifts {
+        .btn-save-shifts, .btn-save-locations {
             margin: 15px;
+        }
+        /* 地點管理頁面獨有樣式 */
+        .location-item.active-loc {
+            border-left: 4px solid #ff9800;
+            background: #fff8f0;
         }
         /* 手機小屏適配 */
         @media (max-width: 450px) {
             .days {
                 gap: 4px;
-                padding: 10px;
-                grid-auto-rows: 110px;
+                padding: 8px;
+                grid-auto-rows: 90px;
             }
             .day {
-                padding: 6px 4px;
-                gap: 6px;
+                padding: 3px 2px;
+                gap: 1px;
             }
             .date {
-                font-size: 14px;
+                font-size: 12px;
+                height: 14px;
             }
             .shift-select {
-                font-size: 12px;
-                padding: 4px 2px;
+                font-size: 10px;
+                height: 18px;
             }
             .shift-info {
-                font-size: 10px;
-                gap: 3px;
+                font-size: 8.5px;
             }
             .s-code {
-                font-size: 11px;
+                font-size: 9px;
             }
-            .weekday {
-                padding: 8px 0;
-                font-size: 12px;
+            .loc-btn {
+                font-size: 8px;
+                height: 14px;
             }
             .tab-btn {
-                padding: 10px;
-                font-size: 15px;
-            }
-            .shift-item {
-                padding: 10px 12px;
-                gap: 10px;
-            }
-            .shift-item-code {
-                font-size: 15px;
+                font-size: 14px;
+                padding: 8px;
             }
         }
-        /* 超小屏保險 */
         @media (max-width: 380px) {
             .days {
-                grid-auto-rows: 105px;
+                grid-auto-rows: 85px;
             }
             .shift-info {
-                font-size: 9.5px;
+                font-size: 8px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- 頁面切換按鈕 -->
+    <!-- 頁面切換按鈕 - 新增地點管理 -->
     <div class="page-tabs">
         <button class="tab-btn active" data-tab="calendar">排班月曆</button>
-        <button class="tab-btn" data-tab="manage">班次管理</button>
+        <button class="tab-btn" data-tab="shift-manage">班次管理</button>
+        <button class="tab-btn" data-tab="location-manage">地點管理</button>
     </div>
 
     <!-- 排班月曆頁面 -->
@@ -446,8 +469,8 @@
         <button class="btn-save" id="save-calendar">儲存本月排班</button>
     </div>
 
-    <!-- 班次管理頁面 - 新增配色選擇器 -->
-    <div class="container" id="manage">
+    <!-- 班次管理頁面 - 原manage改名 -->
+    <div class="container" id="shift-manage">
         <div class="manage-header">班次管理 | 新增/編輯/刪除</div>
         <form class="manage-form" id="shift-form">
             <div class="form-item">
@@ -458,7 +481,6 @@
                 <label for="shift-time">上下班時間（如11:30 - 19:00、放假）</label>
                 <input type="text" id="shift-time" class="form-input" placeholder="請輸入時間/備註" required>
             </div>
-            <!-- 新增：手動選擇時段配色 -->
             <div class="color-item">
                 <label for="shift-color">選擇班次配色</label>
                 <select id="shift-color" class="color-select" required>
@@ -476,28 +498,49 @@
         <button class="btn-save btn-save-shifts" id="save-shifts">儲存所有班次</button>
     </div>
 
+    <!-- 新增：地點管理頁面（默認KT，支援增刪改） -->
+    <div class="container" id="location-manage">
+        <div class="manage-header">地點管理 | 新增/編輯/刪除（默認KT）</div>
+        <form class="manage-form" id="location-form">
+            <div class="form-item">
+                <label for="location-code">地點簡寫（如KT、TST）</label>
+                <input type="text" id="location-code" class="form-input" placeholder="請輸入地點簡寫（2-3個字）" required>
+            </div>
+            <div class="form-item">
+                <label for="location-desc">地點全名（如啟德、尖沙咀）</label>
+                <input type="text" id="location-desc" class="form-input" placeholder="請輸入地點全名" required>
+            </div>
+            <button type="submit" class="btn-add" id="btn-add-location">新增地點</button>
+        </form>
+        <div class="location-list" id="location-list"></div>
+        <button class="btn-save btn-save-locations" id="save-locations">儲存所有地點</button>
+    </div>
+
     <script>
         // 全局變量
         let currentYear = 2026;
-        let currentMonth = 1; // 0=1月,1=2月...
+        let currentMonth = 1;
         const today = new Date();
         const todayYear = today.getFullYear();
         const todayMonth = today.getMonth();
         const todayDate = today.getDate();
-        let shiftTimes = {}; // 存儲班次：{code: {time: '', color: ''}}
-        let editCode = null;
+        let shiftTimes = {}; // 班次數據
+        let locations = {};  // 地點數據 {代碼: 全名}
+        let editShiftCode = null; // 編輯班次標記
+        let editLocCode = null;   // 編輯地點標記
 
         // 頁面初始化
         function initApp() {
             const today = new Date();
-            currentYear = today.getFullYear(); // 獲取當前年份
+            currentYear = today.getFullYear();
             currentMonth = today.getMonth();
 
+            // 加載班次數據
             const savedShifts = localStorage.getItem('shiftTimes');
             if (savedShifts) {
                 shiftTimes = JSON.parse(savedShifts);
             } else {
-                // 默認班次數據（帶配色）
+                // 默認班次
                 shiftTimes = {
                     "B**": {time: "06:00 - 15:30", color: "morning"},
                     "B6": {time: "06:00 - 13:30", color: "morning"},
@@ -506,7 +549,6 @@
                     "B8": {time: "08:00 - 15:30", color: "morning"},
                     "B8H": {time: "08:30 - 16:00", color: "morning"},
                     "BB": {time: "06:00 - 15:30", color: "morning"},
-
                     "K/DD": {time: "08:45 - 17:33", color: "noon"},
                     "D845": {time: "08:45 - 16:15", color: "noon"},
                     "D8H": {time: "08:30 - 16:00", color: "noon"},
@@ -518,7 +560,6 @@
                     "D11H": {time: "11:30 - 19:00", color: "noon"},
                     "D12": {time: "12:00 - 19:30", color: "noon"},
                     "D12H": {time: "12:30 - 20:00", color: "noon"},
-
                     "E": {time: "14:30 - 23:00", color: "night"},
                     "E**": {time: "14:30 - 24:00", color: "night"},
                     "E1": {time: "13:00 - 20:30", color: "night"},
@@ -530,16 +571,29 @@
                     "E4": {time: "16:00 - 23:30", color: "night"},
                     "E4H": {time: "16:30 - 24:00", color: "night"},
                     "EE": {time: "14:30 - 23:00", color: "night"},
-
                     "L": {time: "放假", color: "holiday"},
                     "KCTA": {time: "23:00 - 07:30", color: "other"},
                 };
             }
+
+            // 加載地點數據 - 默認KT（觀塘）
+            const savedLocs = localStorage.getItem('locations');
+            if (savedLocs) {
+                locations = JSON.parse(savedLocs);
+            } else {
+                locations = {
+                    "KT": "啟德",
+                    "TST": "尖沙咀"
+                };
+            }
+
+            // 渲染所有模塊
             renderCalendar(currentYear, currentMonth);
             renderShiftList();
+            renderLocationList();
         }
 
-        // 頁面切換
+        // 頁面切換（支援3個頁面）
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -551,7 +605,7 @@
             });
         });
 
-        // 渲染月曆 - 字母排序，整框配色，移除分隔符
+        // 渲染月曆 - 核心：地點按鈕預設KT，點擊切換TST（無重複）
         function renderCalendar(year, month) {
             const daysContainer = document.getElementById('days-container');
             daysContainer.innerHTML = '';
@@ -566,12 +620,17 @@
                 daysContainer.appendChild(emptyDay);
             }
 
-            // 班次按字母+數字自然排序
+            // 班次排序
             const sortedShiftCodes = Object.keys(shiftTimes).sort((a, b) => a.localeCompare(b, 'zh-CN', { numeric: true }));
             let shiftOptions = '<option value="" selected disabled></option>';
             sortedShiftCodes.forEach(shift => {
                 shiftOptions += `<option value="${shift}">${shift}</option>`;
             });
+
+            // 加載保存的排班和地點狀態
+            const saveKey = `shift_${year}-${month + 1}`;
+            const savedCalendar = localStorage.getItem(saveKey);
+            const calendarData = savedCalendar ? JSON.parse(savedCalendar) : {};
 
             // 填充當月日期
             for (let day = 1; day <= daysInMonth; day++) {
@@ -583,52 +642,64 @@
                                   (year === todayYear && month === todayMonth && day < todayDate);
                 if (isExpired) dayEl.classList.add('expired');
 
-                // 固定DOM結構
+                // 核心DOM：移除重複TST，僅一個地點按鈕（預設KT）
                 dayEl.innerHTML = `
                     <div class="date">${day}</div>
                     <select class="shift-select">${shiftOptions}</select>
                     <div class="shift-info"></div>
+                    <button class="loc-btn">KT</button> <!-- 預設白色底KT -->
                 `;
                 daysContainer.appendChild(dayEl);
 
-                // 加載保存的排班
-                const saveKey = `shift_${year}-${month + 1}`;
-                const savedCalendar = localStorage.getItem(saveKey);
-                if (savedCalendar) {
-                    const calendarData = JSON.parse(savedCalendar);
-                    if (calendarData[day]) {
-                        const select = dayEl.querySelector('.shift-select');
-                        const infoEl = dayEl.querySelector('.shift-info');
-                        const code = calendarData[day];
-                        select.value = code;
-                        const {time, color} = shiftTimes[code];
-                        // 整框配色
+                // 加載保存的班次+地點狀態
+                if (calendarData[day]) {
+                    const { shiftCode, locCode } = calendarData[day];
+                    const select = dayEl.querySelector('.shift-select');
+                    const infoEl = dayEl.querySelector('.shift-info');
+                    const locBtn = dayEl.querySelector('.loc-btn');
+                    
+                    // 加載班次
+                    if (shiftCode) {
+                        select.value = shiftCode;
+                        const {time, color} = shiftTimes[shiftCode];
                         dayEl.classList.add(`bg-${color}`);
-                        // 移除分隔符，班次粗體
+                        const codeClass = (shiftCode === 'BB' || shiftCode === 'EE') ? 's-code blue' : 's-code';
                         infoEl.innerHTML = `
-                            <span class="s-code">${code}</span>
+                            <span class="${codeClass}">${shiftCode}</span>
                             <span class="s-time">${time}</span>
                         `;
                     }
-                }
-            }
 
-            // 綁定選擇事件
-            document.querySelectorAll('.shift-select').forEach(select => {
-                select.addEventListener('change', updateShiftInfo);
-            });
+                    // 加載地點狀態：如果是TST則激活（橙色底TST）
+                    if (locCode === 'TST') {
+                        locBtn.classList.add('active');
+                        locBtn.textContent = 'TST';
+                    }
+                }
+
+                // 綁定班次選擇事件
+                dayEl.querySelector('.shift-select').addEventListener('change', updateShiftInfo);
+                // 綁定地點按鈕事件：點擊切換KT/TST（無重複，只改文字和樣式）
+                dayEl.querySelector('.loc-btn').addEventListener('click', function() {
+                    this.classList.toggle('active');
+                    if (this.classList.contains('active')) {
+                        this.textContent = 'TST'; // 激活：橙色底TST
+                    } else {
+                        this.textContent = 'KT';  // 默認：白色底KT
+                    }
+                });
+            }
 
             // 更新標題
             document.getElementById('month-title').textContent = `${year}年${month + 1}月`;
             document.getElementById('year-select').value = year;
         }
 
-        // 更新班次信息 - 移除分隔符，粗體班次
+        // 更新班次信息
         function updateShiftInfo() {
             const code = this.value;
             const infoEl = this.nextElementSibling;
             const dayEl = this.parentElement;
-            // 清除原有配色
             dayEl.classList.remove('bg-holiday', 'bg-morning', 'bg-noon', 'bg-night', 'bg-other');
 
             if (!code) {
@@ -636,26 +707,15 @@
                 return;
             }
             const {time, color} = shiftTimes[code];
-            // 整框配色
             dayEl.classList.add(`bg-${color}`);
-            
-            // 設置班次字體顏色
-            if (code === 'BB' || code === 'EE') {
-                infoEl.innerHTML = `
-                    <span class="s-code" style="color: blue;">${code}</span>
-                    <span class="s-time">${time}</span>
-                `;
-            } else {
-                // 班次粗體，無分隔符
-                infoEl.innerHTML = `
-                    <span class="s-code">${code}</span>
-                    <span class="s-time">${time}</span>
-                `;
-            }
+            const codeClass = (code === 'BB' || code === 'EE') ? 's-code blue' : 's-code';
+            infoEl.innerHTML = `
+                <span class="${codeClass}">${code}</span>
+                <span class="s-time">${time}</span>
+            `;
         }
 
-
-        // 月份切換
+        // 月份/年份切換
         document.getElementById('prev-month').addEventListener('click', () => {
             currentMonth--;
             if (currentMonth < 0) {
@@ -672,33 +732,34 @@
             }
             renderCalendar(currentYear, currentMonth);
         });
-
-        // 年份選擇
         document.getElementById('year-select').addEventListener('change', (e) => {
             currentYear = parseInt(e.target.value);
             renderCalendar(currentYear, currentMonth);
         });
 
-        // 保存本月排班
+        // 保存本月排班+地點狀態（存locCode：KT/TST）
         document.getElementById('save-calendar').addEventListener('click', () => {
             const saveKey = `${currentYear}-${currentMonth + 1}`;
             const saveData = {};
             document.querySelectorAll('.day').forEach(dayEl => {
                 const date = dayEl.querySelector('.date')?.textContent;
-                const shift = dayEl.querySelector('.shift-select')?.value;
-                if (date && shift) saveData[date] = shift;
+                const shiftCode = dayEl.querySelector('.shift-select')?.value;
+                const locBtn = dayEl.querySelector('.loc-btn');
+                // 獲取當前地點代碼：激活=TST，否則=KT
+                const locCode = locBtn.classList.contains('active') ? 'TST' : 'KT';
+                if (date) {
+                    saveData[date] = { shiftCode, locCode };
+                }
             });
             localStorage.setItem(`shift_${saveKey}`, JSON.stringify(saveData));
-            alert("✅ 本月排班已儲存！");
+            alert("✅ 本月排班+地點已儲存！");
         });
 
-        // 渲染班次列表 - 顯示配色，支持手動選擇
+        // ---------------------- 班次管理相關 ----------------------
         function renderShiftList() {
             const listContainer = document.getElementById('shift-list');
             listContainer.innerHTML = '';
-            // 按字母排序
             const sortedShifts = Object.entries(shiftTimes).sort((a, b) => a[0].localeCompare(b, 'zh-CN', { numeric: true }));
-            // 配色名對應
             const colorName = {
                 holiday: '放假-淺啡',
                 morning: '早更-粉紅',
@@ -726,22 +787,18 @@
             bindShiftActions();
         }
 
-        // 綁定編輯/刪除事件 - 編輯帶配色回顯
         function bindShiftActions() {
-            // 編輯班次
             document.querySelectorAll('.btn-edit').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const code = e.target.dataset.code;
                     const {time, color} = shiftTimes[code];
-                    editCode = code;
-                    // 回顯數據
+                    editShiftCode = code;
                     document.getElementById('shift-code').value = code;
                     document.getElementById('shift-time').value = time;
                     document.getElementById('shift-color').value = color;
                     document.getElementById('btn-add-shift').textContent = '保存編輯';
                 });
             });
-            // 刪除班次
             document.querySelectorAll('.btn-delete').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const code = e.target.dataset.code;
@@ -753,7 +810,6 @@
             });
         }
 
-        // 新增/編輯班次 - 處理手動選擇的配色
         document.getElementById('shift-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const code = document.getElementById('shift-code').value.trim();
@@ -761,15 +817,13 @@
             const color = document.getElementById('shift-color').value;
             if (!code || !time || !color) return;
 
-            if (editCode) {
-                // 編輯班次：刪除舊的，添加新的
-                delete shiftTimes[editCode];
+            if (editShiftCode) {
+                delete shiftTimes[editShiftCode];
                 shiftTimes[code] = {time, color};
-                editCode = null;
+                editShiftCode = null;
                 document.getElementById('btn-add-shift').textContent = '新增班次';
                 alert(`✅ 班次【${code}】已編輯！`);
             } else {
-                // 新增班次：判斷是否重複
                 if (shiftTimes[code]) {
                     alert(`⚠️ 班次【${code}】已存在！`);
                     return;
@@ -777,38 +831,110 @@
                 shiftTimes[code] = {time, color};
                 alert(`✅ 班次【${code}】已新增！`);
             }
-            // 重置表單
             document.getElementById('shift-form').reset();
             renderShiftList();
         });
 
-        // 儲存所有班次到伺服器
-        document.getElementById('save-shifts').addEventListener('click', async () => {
-            const shiftsToSave = {};
-            for (const [code, { time, color }] of Object.entries(shiftTimes)) {
-                shiftsToSave[code] = { time, color };
-            }
-
-            try {
-                const response = await fetch('/.netlify/functions/saveShifts', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ shifts: shiftsToSave })
-                });
-
-                if (response.ok) {
-                    alert("✅ 所有班次已儲存到伺服器！");
-                } else {
-                    alert("❌ 儲存失敗，請稍後再試。");
-                }
-            } catch (error) {
-                console.error(error);
-                alert("❌ 發生錯誤，請稍後再試。");
-            }
+        document.getElementById('save-shifts').addEventListener('click', () => {
+            localStorage.setItem('shiftTimes', JSON.stringify(shiftTimes));
+            alert("✅ 所有班次已儲存到本地！");
         });
 
+        // ---------------------- 新增：地點管理相關 ----------------------
+        function renderLocationList() {
+            const listContainer = document.getElementById('location-list');
+            listContainer.innerHTML = '';
+            const sortedLocs = Object.entries(locations).sort((a, b) => a[0].localeCompare(b));
+            sortedLocs.forEach(([code, desc]) => {
+                const item = document.createElement('div');
+                // 默認KT標記為默認地點
+                item.className = `location-item ${code === 'KT' ? 'active-loc' : ''}`;
+                item.dataset.code = code;
+                item.innerHTML = `
+                    <div class="location-item-info">
+                        <span class="location-item-code">${code}</span>
+                        <span class="location-item-desc">${desc}</span>
+                        ${code === 'KT' ? '<span style="font-size:12px;color:#ff9800;">默認地點</span>' : ''}
+                    </div>
+                    <div class="location-actions">
+                        <button class="loc-btn-edit" data-code="${code}">編輯</button>
+                        <button class="loc-btn-delete" data-code="${code}">刪除</button>
+                    </div>
+                `;
+                // KT不可刪除
+                if (code === 'KT') {
+                    item.querySelector('.loc-btn-delete').disabled = true;
+                    item.querySelector('.loc-btn-delete').style.opacity = 0.5;
+                    item.querySelector('.loc-btn-delete').style.cursor = 'not-allowed';
+                }
+                listContainer.appendChild(item);
+            });
+            bindLocationActions();
+        }
+
+        function bindLocationActions() {
+            // 編輯地點
+            document.querySelectorAll('.loc-btn-edit').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const code = e.target.dataset.code;
+                    const desc = locations[code];
+                    editLocCode = code;
+                    document.getElementById('location-code').value = code;
+                    document.getElementById('location-desc').value = desc;
+                    document.getElementById('btn-add-location').textContent = '保存編輯';
+                });
+            });
+            // 刪除地點（KT不可刪）
+            document.querySelectorAll('.loc-btn-delete').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const code = e.target.dataset.code;
+                    if (code === 'KT') return;
+                    if (confirm(`確定要刪除地點【${code} - ${locations[code]}】嗎？`)) {
+                        delete locations[code];
+                        renderLocationList();
+                    }
+                });
+            });
+        }
+
+        // 新增/編輯地點
+        document.getElementById('location-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const code = document.getElementById('location-code').value.trim().toUpperCase();
+            const desc = document.getElementById('location-desc').value.trim();
+            if (!code || !desc || code.length > 3) {
+                alert('⚠️ 地點簡寫請輸入2-3個字，全名不可為空！');
+                return;
+            }
+
+            if (editLocCode) {
+                // 編輯：KT不可改簡寫
+                if (editLocCode === 'KT' && code !== 'KT') {
+                    alert('⚠️ 默認地點KT的簡寫不可修改！');
+                    return;
+                }
+                delete locations[editLocCode];
+                locations[code] = desc;
+                editLocCode = null;
+                document.getElementById('btn-add-location').textContent = '新增地點';
+                alert(`✅ 地點【${code}】已編輯！`);
+            } else {
+                if (locations[code]) {
+                    alert(`⚠️ 地點【${code}】已存在！`);
+                    return;
+                }
+                locations[code] = desc;
+                alert(`✅ 地點【${code}】已新增！`);
+            }
+            document.getElementById('location-form').reset();
+            renderLocationList();
+        });
+
+        // 保存所有地點
+        document.getElementById('save-locations').addEventListener('click', () => {
+            localStorage.setItem('locations', JSON.stringify(locations));
+            alert("✅ 所有地點已儲存到本地！");
+        });
 
         // 初始化應用
         window.onload = initApp;
