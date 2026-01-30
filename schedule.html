@@ -16,7 +16,7 @@
             padding: 15px;
             min-height: 100vh;
         }
-        /* 頁面切換按鈕 - 改為3個（排班+班次+地點） */
+        /* 頁面切換按鈕 - 3個（排班+班次+地點） */
         .page-tabs {
             max-width: 600px;
             margin: 0 auto 15px;
@@ -253,7 +253,7 @@
         .btn-save:hover {
             background: #8c6d53;
         }
-        /* 班次管理頁面 - 不變 */
+        /* 班次/地點管理頁面通用樣式 */
         .manage-header {
             background-color: #ffb74d;
             color: white;
@@ -272,23 +272,17 @@
         .manage-form .form-item {
             grid-column: span 2;
         }
-        .manage-form .color-item {
-            grid-column: span 2;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
         .form-item {
             display: flex;
             flex-direction: column;
             gap: 5px;
         }
-        .form-item label, .color-item label {
+        .form-item label {
             font-size: 14px;
             font-weight: 500;
             color: #333;
         }
-        .form-input, .color-select {
+        .form-input {
             padding: 10px;
             border: 1px solid #ffe0b2;
             border-radius: 8px;
@@ -296,7 +290,7 @@
             font-size: 14px;
             color: #333;
         }
-        .form-input:focus, .color-select:focus {
+        .form-input:focus {
             border-color: #ffb74d;
         }
         .btn-add {
@@ -385,7 +379,7 @@
         .btn-save-shifts, .btn-save-locations {
             margin: 15px;
         }
-        /* 地點管理頁面獨有樣式 */
+        /* 地點管理獨有樣式 */
         .location-item.active-loc {
             border-left: 4px solid #ff9800;
             background: #fff8f0;
@@ -435,7 +429,7 @@
     </style>
 </head>
 <body>
-    <!-- 頁面切換按鈕 - 新增地點管理 -->
+    <!-- 頁面切換按鈕 -->
     <div class="page-tabs">
         <button class="tab-btn active" data-tab="calendar">排班月曆</button>
         <button class="tab-btn" data-tab="shift-manage">班次管理</button>
@@ -447,7 +441,7 @@
         <div class="calendar-header">
             <div class="month-selector">
                 <button id="prev-month">&lt;</button>
-                <div class="month-title" id="month-title">2026年2月</div>
+                <div class="month-title" id="month-title">2026年01月</div>
                 <button id="next-month">&gt;</button>
             </div>
             <select id="year-select" class="year-select">
@@ -469,7 +463,7 @@
         <button class="btn-save" id="save-calendar">儲存本月排班</button>
     </div>
 
-    <!-- 班次管理頁面 - 原manage改名 -->
+    <!-- 班次管理頁面 -->
     <div class="container" id="shift-manage">
         <div class="manage-header">班次管理 | 新增/編輯/刪除</div>
         <form class="manage-form" id="shift-form">
@@ -481,9 +475,9 @@
                 <label for="shift-time">上下班時間（如11:30 - 19:00、放假）</label>
                 <input type="text" id="shift-time" class="form-input" placeholder="請輸入時間/備註" required>
             </div>
-            <div class="color-item">
+            <div class="form-item">
                 <label for="shift-color">選擇班次配色</label>
-                <select id="shift-color" class="color-select" required>
+                <select id="shift-color" class="form-input" required>
                     <option value="" selected disabled>請選擇配色</option>
                     <option value="holiday">放假 - 淺啡色</option>
                     <option value="morning">早更 - 粉紅色</option>
@@ -498,16 +492,16 @@
         <button class="btn-save btn-save-shifts" id="save-shifts">儲存所有班次</button>
     </div>
 
-    <!-- 新增：地點管理頁面（默認KT，支援增刪改） -->
+    <!-- 地點管理頁面 -->
     <div class="container" id="location-manage">
         <div class="manage-header">地點管理 | 新增/編輯/刪除（默認KT）</div>
         <form class="manage-form" id="location-form">
             <div class="form-item">
                 <label for="location-code">地點簡寫（如KT、TST）</label>
-                <input type="text" id="location-code" class="form-input" placeholder="請輸入地點簡寫（2-3個字）" required>
+                <input type="text" id="location-code" class="form-input" placeholder="請輸入2-3個字簡寫" required>
             </div>
             <div class="form-item">
-                <label for="location-desc">地點全名（如啟德、尖沙咀）</label>
+                <label for="location-desc">地點全名（如觀塘、尖沙咀）</label>
                 <input type="text" id="location-desc" class="form-input" placeholder="請輸入地點全名" required>
             </div>
             <button type="submit" class="btn-add" id="btn-add-location">新增地點</button>
@@ -517,30 +511,25 @@
     </div>
 
     <script>
-        // 全局變量
-        let currentYear = 2026;
-        let currentMonth = 1;
-        const today = new Date();
-        const todayYear = today.getFullYear();
+        // 全局變量 - 默認賦值為當前月份（解決開啟默認二月問題）
+        let today = new Date();
+        let currentYear = today.getFullYear();
+        let currentMonth = today.getMonth(); // 直接取當前月份索引（0=1月、1=2月...）
         const todayMonth = today.getMonth();
         const todayDate = today.getDate();
-        let shiftTimes = {}; // 班次數據
-        let locations = {};  // 地點數據 {代碼: 全名}
+        let shiftTimes = {}; // 班次數據 {代碼: {time, color}}
+        let locations = {};  // 地點數據 {簡寫: 全名}
         let editShiftCode = null; // 編輯班次標記
         let editLocCode = null;   // 編輯地點標記
 
         // 頁面初始化
         function initApp() {
-            const today = new Date();
-            currentYear = today.getFullYear();
-            currentMonth = today.getMonth();
-
             // 加載班次數據
             const savedShifts = localStorage.getItem('shiftTimes');
             if (savedShifts) {
                 shiftTimes = JSON.parse(savedShifts);
             } else {
-                // 默認班次
+                // 默認班次數據
                 shiftTimes = {
                     "B**": {time: "06:00 - 15:30", color: "morning"},
                     "B6": {time: "06:00 - 13:30", color: "morning"},
@@ -576,24 +565,24 @@
                 };
             }
 
-            // 加載地點數據 - 默認KT（觀塘）
+            // 加載地點數據 - 默認KT（觀塘）、TST（尖沙咀）
             const savedLocs = localStorage.getItem('locations');
             if (savedLocs) {
                 locations = JSON.parse(savedLocs);
             } else {
                 locations = {
-                    "KT": "啟德",
+                    "KT": "觀塘",
                     "TST": "尖沙咀"
                 };
             }
 
-            // 渲染所有模塊
+            // 渲染所有模塊 - 直接渲染當前月份
             renderCalendar(currentYear, currentMonth);
             renderShiftList();
             renderLocationList();
         }
 
-        // 頁面切換（支援3個頁面）
+        // 頁面切換
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -605,13 +594,25 @@
             });
         });
 
-        // 渲染月曆 - 核心：地點按鈕預設KT，點擊切換TST（無重複）
+        // 生成統一的儲存KEY（年-月補0，如2026-01、2026-12）
+        function getStorageKey(year, month) {
+            const showMonth = month + 1;
+            const fixedMonth = showMonth.toString().padStart(2, '0');
+            return `shift_${year}-${fixedMonth}`;
+        }
+
+        // 渲染月曆 - 開啟即顯示當前月份
         function renderCalendar(year, month) {
             const daysContainer = document.getElementById('days-container');
             daysContainer.innerHTML = '';
 
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const firstDay = new Date(year, month, 1).getDay(); // 當月1號星期幾
+            const daysInMonth = new Date(year, month + 1, 0).getDate(); // 當月總天數
+            const showMonth = month + 1;
+            const fixedMonth = showMonth.toString().padStart(2, '0');
+            // 更新標題為當前月份（補0格式）
+            document.getElementById('month-title').textContent = `${year}年${fixedMonth}月`;
+            document.getElementById('year-select').value = year;
 
             // 填充上月空白格
             for (let i = 0; i < firstDay; i++) {
@@ -627,31 +628,31 @@
                 shiftOptions += `<option value="${shift}">${shift}</option>`;
             });
 
-            // 加載保存的排班和地點狀態
-            const saveKey = `shift_${year}-${month + 1}`;
-            const savedCalendar = localStorage.getItem(saveKey);
+            // 加載當月儲存的數據
+            const storageKey = getStorageKey(year, month);
+            const savedCalendar = localStorage.getItem(storageKey);
             const calendarData = savedCalendar ? JSON.parse(savedCalendar) : {};
 
             // 填充當月日期
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayEl = document.createElement('div');
                 dayEl.classList.add('day');
-                // 過期判斷
-                const isExpired = (year < todayYear) || 
-                                  (year === todayYear && month < todayMonth) || 
-                                  (year === todayYear && month === todayMonth && day < todayDate);
+                // 過期判斷（當前日期之前的日期禁用）
+                const isExpired = (year < currentYear) || 
+                                  (year === currentYear && month < todayMonth) || 
+                                  (year === currentYear && month === todayMonth && day < todayDate);
                 if (isExpired) dayEl.classList.add('expired');
 
-                // 核心DOM：移除重複TST，僅一個地點按鈕（預設KT）
+                // 日期框DOM - 無重複TST，僅一個地點按鈕
                 dayEl.innerHTML = `
                     <div class="date">${day}</div>
                     <select class="shift-select">${shiftOptions}</select>
                     <div class="shift-info"></div>
-                    <button class="loc-btn">KT</button> <!-- 預設白色底KT -->
+                    <button class="loc-btn">KT</button>
                 `;
                 daysContainer.appendChild(dayEl);
 
-                // 加載保存的班次+地點狀態
+                // 加載儲存的班次+地點狀態
                 if (calendarData[day]) {
                     const { shiftCode, locCode } = calendarData[day];
                     const select = dayEl.querySelector('.shift-select');
@@ -664,35 +665,23 @@
                         const {time, color} = shiftTimes[shiftCode];
                         dayEl.classList.add(`bg-${color}`);
                         const codeClass = (shiftCode === 'BB' || shiftCode === 'EE') ? 's-code blue' : 's-code';
-                        infoEl.innerHTML = `
-                            <span class="${codeClass}">${shiftCode}</span>
-                            <span class="s-time">${time}</span>
-                        `;
+                        infoEl.innerHTML = `<span class="${codeClass}">${shiftCode}</span><span class="s-time">${time}</span>`;
                     }
 
-                    // 加載地點狀態：如果是TST則激活（橙色底TST）
+                    // 加載地點狀態（TST激活，KT默認）
                     if (locCode === 'TST') {
                         locBtn.classList.add('active');
                         locBtn.textContent = 'TST';
                     }
                 }
 
-                // 綁定班次選擇事件
+                // 綁定事件
                 dayEl.querySelector('.shift-select').addEventListener('change', updateShiftInfo);
-                // 綁定地點按鈕事件：點擊切換KT/TST（無重複，只改文字和樣式）
                 dayEl.querySelector('.loc-btn').addEventListener('click', function() {
                     this.classList.toggle('active');
-                    if (this.classList.contains('active')) {
-                        this.textContent = 'TST'; // 激活：橙色底TST
-                    } else {
-                        this.textContent = 'KT';  // 默認：白色底KT
-                    }
+                    this.textContent = this.classList.contains('active') ? 'TST' : 'KT';
                 });
             }
-
-            // 更新標題
-            document.getElementById('month-title').textContent = `${year}年${month + 1}月`;
-            document.getElementById('year-select').value = year;
         }
 
         // 更新班次信息
@@ -709,13 +698,10 @@
             const {time, color} = shiftTimes[code];
             dayEl.classList.add(`bg-${color}`);
             const codeClass = (code === 'BB' || code === 'EE') ? 's-code blue' : 's-code';
-            infoEl.innerHTML = `
-                <span class="${codeClass}">${code}</span>
-                <span class="s-time">${time}</span>
-            `;
+            infoEl.innerHTML = `<span class="${codeClass}">${code}</span><span class="s-time">${time}</span>`;
         }
 
-        // 月份/年份切換
+        // 月份切換
         document.getElementById('prev-month').addEventListener('click', () => {
             currentMonth--;
             if (currentMonth < 0) {
@@ -732,30 +718,43 @@
             }
             renderCalendar(currentYear, currentMonth);
         });
+        // 年份選擇器
         document.getElementById('year-select').addEventListener('change', (e) => {
             currentYear = parseInt(e.target.value);
             renderCalendar(currentYear, currentMonth);
         });
 
-        // 保存本月排班+地點狀態（存locCode：KT/TST）
+        // 保存本月排班 - 核心：彈窗顯示詳細儲存資訊
         document.getElementById('save-calendar').addEventListener('click', () => {
-            const saveKey = `${currentYear}-${currentMonth + 1}`;
+            const storageKey = getStorageKey(currentYear, currentMonth);
             const saveData = {};
+            let saveInfo = `✅ ${currentYear}年${currentMonth+1}月排班儲存成功！\n\n已儲存排班：\n`;
+            let hasData = false;
+
             document.querySelectorAll('.day').forEach(dayEl => {
                 const date = dayEl.querySelector('.date')?.textContent;
+                if (!date) return; // 跳過空白格
                 const shiftCode = dayEl.querySelector('.shift-select')?.value;
                 const locBtn = dayEl.querySelector('.loc-btn');
-                // 獲取當前地點代碼：激活=TST，否則=KT
                 const locCode = locBtn.classList.contains('active') ? 'TST' : 'KT';
-                if (date) {
-                    saveData[date] = { shiftCode, locCode };
+                const locName = locations[locCode] || locCode; // 顯示地點全名
+                
+                saveData[date] = { shiftCode, locCode };
+                // 只收集有班次的數據顯示
+                if (shiftCode) {
+                    hasData = true;
+                    const shiftTime = shiftTimes[shiftCode].time;
+                    saveInfo += `📅 ${date}日 | 🕒 ${shiftCode}(${shiftTime}) | 📍 ${locCode}(${locName})\n`;
                 }
             });
-            localStorage.setItem(`shift_${saveKey}`, JSON.stringify(saveData));
-            alert("✅ 本月排班+地點已儲存！");
+
+            // 儲存到本地
+            localStorage.setItem(storageKey, JSON.stringify(saveData));
+            // 彈窗提示（無班次時顯示基礎提示，有班次顯示詳情）
+            alert(hasData ? saveInfo : `✅ ${currentYear}年${currentMonth+1}月排班儲存成功！\n當月暫無設定班次～`);
         });
 
-        // ---------------------- 班次管理相關 ----------------------
+        // ---------------------- 班次管理功能 ----------------------
         function renderShiftList() {
             const listContainer = document.getElementById('shift-list');
             listContainer.innerHTML = '';
@@ -770,7 +769,6 @@
             sortedShifts.forEach(([code, {time, color}]) => {
                 const item = document.createElement('div');
                 item.className = `shift-item bg-${color}`;
-                item.dataset.code = code;
                 item.innerHTML = `
                     <div class="shift-item-info">
                         <span class="shift-item-code">${code}</span>
@@ -788,6 +786,7 @@
         }
 
         function bindShiftActions() {
+            // 編輯班次
             document.querySelectorAll('.btn-edit').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const code = e.target.dataset.code;
@@ -799,10 +798,11 @@
                     document.getElementById('btn-add-shift').textContent = '保存編輯';
                 });
             });
+            // 刪除班次
             document.querySelectorAll('.btn-delete').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const code = e.target.dataset.code;
-                    if (confirm(`確定要刪除班次【${code}】嗎？`)) {
+                    if (confirm(`確定刪除班次【${code}】嗎？`)) {
                         delete shiftTimes[code];
                         renderShiftList();
                     }
@@ -810,12 +810,13 @@
             });
         }
 
+        // 新增/編輯班次提交
         document.getElementById('shift-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const code = document.getElementById('shift-code').value.trim();
             const time = document.getElementById('shift-time').value.trim();
             const color = document.getElementById('shift-color').value;
-            if (!code || !time || !color) return;
+            if (!code || !time) return;
 
             if (editShiftCode) {
                 delete shiftTimes[editShiftCode];
@@ -835,21 +836,21 @@
             renderShiftList();
         });
 
+        // 保存所有班次
         document.getElementById('save-shifts').addEventListener('click', () => {
             localStorage.setItem('shiftTimes', JSON.stringify(shiftTimes));
-            alert("✅ 所有班次已儲存到本地！");
+            // 彈窗顯示班次數量
+            alert(`✅ 所有班次已儲存到本地！\n當前共儲存 ${Object.keys(shiftTimes).length} 個班次～`);
         });
 
-        // ---------------------- 新增：地點管理相關 ----------------------
+        // ---------------------- 地點管理功能 ----------------------
         function renderLocationList() {
             const listContainer = document.getElementById('location-list');
             listContainer.innerHTML = '';
             const sortedLocs = Object.entries(locations).sort((a, b) => a[0].localeCompare(b));
             sortedLocs.forEach(([code, desc]) => {
                 const item = document.createElement('div');
-                // 默認KT標記為默認地點
                 item.className = `location-item ${code === 'KT' ? 'active-loc' : ''}`;
-                item.dataset.code = code;
                 item.innerHTML = `
                     <div class="location-item-info">
                         <span class="location-item-code">${code}</span>
@@ -858,15 +859,9 @@
                     </div>
                     <div class="location-actions">
                         <button class="loc-btn-edit" data-code="${code}">編輯</button>
-                        <button class="loc-btn-delete" data-code="${code}">刪除</button>
+                        <button class="loc-btn-delete" data-code="${code}" ${code === 'KT' ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>刪除</button>
                     </div>
                 `;
-                // KT不可刪除
-                if (code === 'KT') {
-                    item.querySelector('.loc-btn-delete').disabled = true;
-                    item.querySelector('.loc-btn-delete').style.opacity = 0.5;
-                    item.querySelector('.loc-btn-delete').style.cursor = 'not-allowed';
-                }
                 listContainer.appendChild(item);
             });
             bindLocationActions();
@@ -889,7 +884,7 @@
                 btn.addEventListener('click', (e) => {
                     const code = e.target.dataset.code;
                     if (code === 'KT') return;
-                    if (confirm(`確定要刪除地點【${code} - ${locations[code]}】嗎？`)) {
+                    if (confirm(`確定刪除地點【${code} - ${locations[code]}】嗎？`)) {
                         delete locations[code];
                         renderLocationList();
                     }
@@ -897,18 +892,18 @@
             });
         }
 
-        // 新增/編輯地點
+        // 新增/編輯地點提交
         document.getElementById('location-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const code = document.getElementById('location-code').value.trim().toUpperCase();
             const desc = document.getElementById('location-desc').value.trim();
             if (!code || !desc || code.length > 3) {
-                alert('⚠️ 地點簡寫請輸入2-3個字，全名不可為空！');
+                alert('⚠️ 簡寫限2-3個字，全名不可為空！');
                 return;
             }
 
             if (editLocCode) {
-                // 編輯：KT不可改簡寫
+                // KT不可修改簡寫
                 if (editLocCode === 'KT' && code !== 'KT') {
                     alert('⚠️ 默認地點KT的簡寫不可修改！');
                     return;
@@ -917,14 +912,14 @@
                 locations[code] = desc;
                 editLocCode = null;
                 document.getElementById('btn-add-location').textContent = '新增地點';
-                alert(`✅ 地點【${code}】已編輯！`);
+                alert(`✅ 地點【${code} - ${desc}】已編輯！`);
             } else {
                 if (locations[code]) {
                     alert(`⚠️ 地點【${code}】已存在！`);
                     return;
                 }
                 locations[code] = desc;
-                alert(`✅ 地點【${code}】已新增！`);
+                alert(`✅ 地點【${code} - ${desc}】已新增！`);
             }
             document.getElementById('location-form').reset();
             renderLocationList();
@@ -933,10 +928,11 @@
         // 保存所有地點
         document.getElementById('save-locations').addEventListener('click', () => {
             localStorage.setItem('locations', JSON.stringify(locations));
-            alert("✅ 所有地點已儲存到本地！");
+            // 彈窗顯示地點數量
+            alert(`✅ 所有地點已儲存到本地！\n當前共儲存 ${Object.keys(locations).length} 個地點～`);
         });
 
-        // 初始化應用
+        // 初始化應用 - 打開即載入當前月份
         window.onload = initApp;
     </script>
 </body>
