@@ -44,7 +44,7 @@
             cursor: pointer;
             font-size: 11px;
         }
-        /* 頁面切換按鈕 - 3個 */
+        /* 頁面切換按鈕 */
         .page-tabs {
             max-width: 600px;
             margin: 0 auto 15px;
@@ -243,26 +243,26 @@
             font-weight: 400;
         }
         
-        /* === 地點按鈕樣式（還原原版好看的細灰色 Border） === */
+        /* === 地點按鈕樣式（恢復最原始設定：白底、不粗體、原版框線） === */
         .loc-btn {
             width: 100%;
             padding: 1px 0;
-            border: 1px solid #ddd; /* 還原細灰邊框 */
+            border: 1px solid #ddd; /* 最先那款的淡淡細灰線邊框 */
             border-radius: 3px;
             font-size: 9px;
-            font-weight: bold;
+            font-weight: normal; /* 拿掉粗體 */
             cursor: pointer;
             transition: all 0.2s;
             flex-shrink: 0;
             height: 16px;
-            background: #fff;
+            background: #ffffff !important; /* 確保未選取時絕對是純白色背景 */
             color: #666;
         }
-        /* 不同地點點擊後的動態文字與背景顏色組合（保持乾淨的淺色系背景與邊框） */
-        .loc-btn.loc-orange { background: #fff3e0 !important; border-color: #ffb74d !important; color: #e65100 !important; }
-        .loc-btn.loc-blue   { background: #e3f2fd !important; border-color: #90caf9 !important; color: #0d47a1 !important; }
-        .loc-btn.loc-purple { background: #f3e5f5 !important; border-color: #ce93d8 !important; color: #4a148c !important; }
-        .loc-btn.loc-red    { background: #ffebee !important; border-color: #ef9a9a !important; color: #b71c1c !important; }
+        /* 還原最先款點擊後的動態 Border 與文字配色（保持純白底，僅改變框線和文字） */
+        .loc-btn.loc-orange { border-color: #ff9800 !important; color: #ff9800 !important; background: #ffffff !important; }
+        .loc-btn.loc-blue   { border-color: #2196f3 !important; color: #2196f3 !important; background: #ffffff !important; }
+        .loc-btn.loc-purple { border-color: #9c27b0 !important; color: #9c27b0 !important; background: #ffffff !important; }
+        .loc-btn.loc-red    { border-color: #e53935 !important; color: #e53935 !important; background: #ffffff !important; }
 
         /* 地點清單小圓點標籤 */
         .loc-badge {
@@ -773,7 +773,7 @@
                         locBtn.setAttribute('data-loc', locCode);
                         locBtn.className = 'loc-btn'; 
                         
-                        // 點擊後動態套用新 Border 與細緻底色配色
+                        // 動態套用最原本經典的框線與顏色
                         const locObj = locations[locCode] || { color: 'orange' };
                         locBtn.classList.add(`loc-${locObj.color}`);
                     }
@@ -923,7 +923,7 @@
             if (await cloudDB.set('shiftTimes', shiftTimes)) alert(`✅ 所有班次已同步至雲端！`);
         });
 
-        // ---------------------- 地點管理功能 (完美修復 Edit功能) ----------------------
+        // ---------------------- 地點管理功能 ----------------------
         function renderLocationList() {
             const listContainer = document.getElementById('location-list');
             listContainer.innerHTML = '';
@@ -953,11 +953,10 @@
         }
 
         function bindLocationActions() {
-            // 編輯地點
             document.querySelectorAll('.loc-btn-edit').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const code = e.target.dataset.code;
-                    editLocCode = code; // 記錄正在編輯的原本簡寫
+                    editLocCode = code; 
                     document.getElementById('location-code').value = code;
                     document.getElementById('location-desc').value = locations[code].desc;
                     document.getElementById('location-color').value = locations[code].color || 'orange';
@@ -965,7 +964,6 @@
                 });
             });
 
-            // 刪除地點
             document.querySelectorAll('.loc-btn-delete').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const code = e.target.dataset.code;
@@ -989,12 +987,10 @@
             if (!code || !desc) return;
 
             if (editLocCode) {
-                // 如果修改了簡寫(Code)，且新簡寫已被別人佔用
                 if (editLocCode !== code && locations[code]) {
                     alert(`⚠️ 地點簡寫【${code}】已存在，請換一個簡寫！`);
                     return;
                 }
-                // 如果是核心 KT/TST 卻想連簡寫一起改，進行提示阻擋
                 if ((editLocCode === 'KT' || editLocCode === 'TST') && editLocCode !== code) {
                     alert('⚠️ 核心預設地點的「簡寫碼(KT/TST)」不能更改，只能更改全名與顏色！');
                     return;
