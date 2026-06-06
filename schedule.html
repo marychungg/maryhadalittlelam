@@ -243,13 +243,14 @@
             font-weight: 400;
         }
         
-        /* === 地點動態顏色樣式 === */
+        /* === 地點按鈕樣式（還原原版好看的細灰色 Border） === */
         .loc-btn {
             width: 100%;
             padding: 1px 0;
-            border: 1px solid #999;
+            border: 1px solid #ddd; /* 還原細灰邊框 */
             border-radius: 3px;
             font-size: 9px;
+            font-weight: bold;
             cursor: pointer;
             transition: all 0.2s;
             flex-shrink: 0;
@@ -257,11 +258,11 @@
             background: #fff;
             color: #666;
         }
-        /* 不同顏色的亮起狀態 */
-        .loc-btn.loc-orange { background: #ff9800 !important; border-color: #e68a00 !important; color: white !important; }
-        .loc-btn.loc-blue   { background: #2196f3 !important; border-color: #1976d2 !important; color: white !important; }
-        .loc-btn.loc-purple { background: #9c27b0 !important; border-color: #7b1fa2 !important; color: white !important; }
-        .loc-btn.loc-red    { background: #e53935 !important; border-color: #c62828 !important; color: white !important; }
+        /* 不同地點點擊後的動態文字與背景顏色組合（保持乾淨的淺色系背景與邊框） */
+        .loc-btn.loc-orange { background: #fff3e0 !important; border-color: #ffb74d !important; color: #e65100 !important; }
+        .loc-btn.loc-blue   { background: #e3f2fd !important; border-color: #90caf9 !important; color: #0d47a1 !important; }
+        .loc-btn.loc-purple { background: #f3e5f5 !important; border-color: #ce93d8 !important; color: #4a148c !important; }
+        .loc-btn.loc-red    { background: #ffebee !important; border-color: #ef9a9a !important; color: #b71c1c !important; }
 
         /* 地點清單小圓點標籤 */
         .loc-badge {
@@ -451,7 +452,7 @@
                 font-size: 9px;
             }
             .loc-btn {
-                font-size: 8px;
+                font-size: 8.5px;
                 height: 14px;
             }
             .tab-btn {
@@ -549,7 +550,7 @@
             <div class="form-item">
                 <label for="location-color">選擇顯示顏色</label>
                 <select id="location-color" class="form-input" required>
-                    <option value="orange" selected>橙色 (預設)</option>
+                    <option value="orange" selected>橙色</option>
                     <option value="blue">藍色</option>
                     <option value="purple">紫色</option>
                     <option value="red">紅色</option>
@@ -562,10 +563,9 @@
     </div>
 
     <script>
-        // === ⚠️ 請在此處填入你的 Supabase 設定 ===
+        // === Supabase 設定 ===
         const SUPABASE_URL = "https://drfnyahztlchzcqfyaxj.supabase.co"; 
         const SUPABASE_KEY = "sb_publishable_rK1OQfY5mUXXI_oeHF3B0g_L0zC0oQL";
-        // =====================================
 
         let today = new Date();
         let currentYear = today.getFullYear();
@@ -577,32 +577,20 @@
         let editShiftCode = null; 
         let editLocCode = null;   
 
-        // 班次顏色排序權重
-        const colorOrder = {
-            'holiday': 1,
-            'morning': 2,
-            'noon': 3,
-            'night': 4,
-            'other': 5
-        };
+        const colorOrder = { 'holiday': 1, 'morning': 2, 'noon': 3, 'night': 4, 'other': 5 };
 
         const cloudDB = {
             async get(key, defaultValue) {
                 try {
                     const res = await fetch(`${SUPABASE_URL}/rest/v1/momo_store?key=eq.${key}&select=value`, {
                         method: 'GET',
-                        headers: {
-                            'apikey': SUPABASE_KEY,
-                            'Authorization': `Bearer ${SUPABASE_KEY}`
-                        }
+                        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
                     });
                     const data = await res.json();
-                    if (data && data.length > 0) {
-                        return data[0].value;
-                    }
+                    if (data && data.length > 0) return data[0].value;
                     return defaultValue;
                 } catch (e) {
-                    console.error("讀取雲端失敗，改用本地快取:", e);
+                    console.error("讀取雲端失敗:", e);
                     const local = localStorage.getItem(key);
                     return local ? JSON.parse(local) : defaultValue;
                 }
@@ -646,49 +634,28 @@
         async function initApp() {
             updateSyncStatus('loading', '正在從雲端載入最新排班與設定...');
             
-            // 1. 載入班次數據
             const defaultShifts = {
-                "B**": {time: "06:00 - 15:30", color: "morning"},
-                "B6": {time: "06:00 - 13:30", color: "morning"},
-                "B": {time: "07:00 - 15:30", color: "morning"},
-                "B7": {time: "07:00 - 14:30", color: "morning"},
-                "B8": {time: "08:00 - 15:30", color: "morning"},
-                "B8H": {time: "08:30 - 16:00", color: "morning"},
-                "BB": {time: "06:00 - 15:30", color: "morning"},
-                "K/DD": {time: "08:45 - 17:33", color: "noon"},
-                "D845": {time: "08:45 - 16:15", color: "noon"},
-                "D8H": {time: "08:30 - 16:00", color: "noon"},
-                "D9": {time: "09:00 - 16:30", color: "noon"},
-                "D9H": {time: "09:30 - 17:00", color: "noon"},
-                "D10": {time: "10:00 - 17:30", color: "noon"},
-                "D10H": {time: "10:30 - 18:00", color: "noon"},
-                "D11": {time: "11:00 - 18:30", color: "noon"},
-                "D11H": {time: "11:30 - 19:00", color: "noon"},
-                "D12": {time: "12:00 - 19:30", color: "noon"},
-                "D12H": {time: "12:30 - 20:00", color: "noon"},
-                "E": {time: "14:30 - 23:00", color: "night"},
-                "E**": {time: "14:30 - 24:00", color: "night"},
-                "E1": {time: "13:00 - 20:30", color: "night"},
-                "E1H": {time: "13:30 - 21:00", color: "night"},
-                "E2": {time: "14:00 - 21:30", color: "night"},
-                "E2H": {time: "14:30 - 22:00", color: "night"},
-                "E3": {time: "15:00 - 22:30", color: "night"},
-                "E3H": {time: "15:30 - 23:00", color: "night"},
-                "E4": {time: "16:00 - 23:30", color: "night"},
-                "E4H": {time: "16:30 - 24:00", color: "night"},
-                "EE": {time: "14:30 - 23:00", color: "night"},
-                "L": {time: "放假", color: "holiday"},
+                "B**": {time: "06:00 - 15:30", color: "morning"}, "B6": {time: "06:00 - 13:30", color: "morning"},
+                "B": {time: "07:00 - 15:30", color: "morning"}, "B7": {time: "07:00 - 14:30", color: "morning"},
+                "B8": {time: "08:00 - 15:30", color: "morning"}, "B8H": {time: "08:30 - 16:00", color: "morning"},
+                "BB": {time: "06:00 - 15:30", color: "morning"}, "K/DD": {time: "08:45 - 17:33", color: "noon"},
+                "D845": {time: "08:45 - 16:15", color: "noon"}, "D8H": {time: "08:30 - 16:00", color: "noon"},
+                "D9": {time: "09:00 - 16:30", color: "noon"}, "D9H": {time: "09:30 - 17:00", color: "noon"},
+                "D10": {time: "10:00 - 17:30", color: "noon"}, "D10H": {time: "10:30 - 18:00", color: "noon"},
+                "D11": {time: "11:00 - 18:30", color: "noon"}, "D11H": {time: "11:30 - 19:00", color: "noon"},
+                "D12": {time: "12:00 - 19:30", color: "noon"}, "D12H": {time: "12:30 - 20:00", color: "noon"},
+                "E": {time: "14:30 - 23:00", color: "night"}, "E**": {time: "14:30 - 24:00", color: "night"},
+                "E1": {time: "13:00 - 20:30", color: "night"}, "E1H": {time: "13:30 - 21:00", color: "night"},
+                "E2": {time: "14:00 - 21:30", color: "night"}, "E2H": {time: "14:30 - 22:00", color: "night"},
+                "E3": {time: "15:00 - 22:30", color: "night"}, "E3H": {time: "15:30 - 23:00", color: "night"},
+                "E4": {time: "16:00 - 23:30", color: "night"}, "E4H": {time: "16:30 - 24:00", color: "night"},
+                "EE": {time: "14:30 - 23:00", color: "night"}, "L": {time: "放假", color: "holiday"},
                 "KCTA": {time: "23:00 - 07:30", color: "other"},
             };
             shiftTimes = await cloudDB.get('shiftTimes', defaultShifts);
 
-            // 2. 載入地點數據 (格式轉為支援顏色： { 簡寫: { desc: 全名, color: 顏色 } })
-            const defaultLocs = { 
-                "KT": { desc: "啟德", color: "orange" }, 
-                "TST": { desc: "尖沙咀", color: "orange" } 
-            };
+            const defaultLocs = { "KT": { desc: "啟德", color: "orange" }, "TST": { desc: "尖沙咀", color: "orange" } };
             let rawLocs = await cloudDB.get('locations', defaultLocs);
-            // 兼容舊格式相容處理
             locations = {};
             Object.entries(rawLocs).forEach(([code, val]) => {
                 if (typeof val === 'string') {
@@ -698,11 +665,9 @@
                 }
             });
 
-            // 3. 渲染頁面
             await refreshCalendarDisplay();
             renderShiftList();
             renderLocationList();
-
             updateSyncStatus('success', '已連線至雲端，資料為最新狀態');
         }
 
@@ -728,17 +693,13 @@
         });
 
         function getStorageKey(year, month) {
-            const showMonth = month + 1;
-            const fixedMonth = showMonth.toString().padStart(2, '0');
-            return `shift_${year}-${fixedMonth}`;
+            return `shift_${year}-${(month + 1).toString().padStart(2, '0')}`;
         }
 
         function getSortedShiftCodes() {
             return Object.keys(shiftTimes).sort((a, b) => {
-                const colorA = shiftTimes[a].color;
-                const colorB = shiftTimes[b].color;
-                const weightA = colorOrder[colorA] || 99;
-                const weightB = colorOrder[colorB] || 99;
+                const weightA = colorOrder[shiftTimes[a].color] || 99;
+                const weightB = colorOrder[shiftTimes[b].color] || 99;
                 if (weightA !== weightB) return weightA - weightB;
                 return a.localeCompare(b, 'zh-CN', { numeric: true });
             });
@@ -746,10 +707,8 @@
 
         function getSortedLocCodes() {
             return Object.keys(locations).sort((a, b) => {
-                if (a === 'KT') return -1;
-                if (b === 'KT') return 1;
-                if (a === 'TST') return -1;
-                if (b === 'TST') return 1;
+                if (a === 'KT') return -1; if (b === 'KT') return 1;
+                if (a === 'TST') return -1; if (b === 'TST') return 1;
                 return a.localeCompare(b);
             });
         }
@@ -761,10 +720,8 @@
 
             const firstDay = new Date(year, month, 1).getDay(); 
             const daysInMonth = new Date(year, month + 1, 0).getDate(); 
-            const showMonth = month + 1;
-            const fixedMonth = showMonth.toString().padStart(2, '0');
             
-            document.getElementById('month-title').textContent = `${year}年${fixedMonth}月`;
+            document.getElementById('month-title').textContent = `${year}年${(month + 1).toString().padStart(2, '0')}月`;
             document.getElementById('year-select').value = year;
 
             for (let i = 0; i < firstDay; i++) {
@@ -775,9 +732,7 @@
 
             const sortedShiftCodes = getSortedShiftCodes();
             let shiftOptions = '<option value="" selected disabled></option>';
-            sortedShiftCodes.forEach(shift => {
-                shiftOptions += `<option value="${shift}">${shift}</option>`;
-            });
+            sortedShiftCodes.forEach(shift => { shiftOptions += `<option value="${shift}">${shift}</option>`; });
 
             const availableLocs = getSortedLocCodes();
 
@@ -808,49 +763,38 @@
                     
                     if (shiftCode && shiftTimes[shiftCode]) {
                         select.value = shiftCode;
-                        const {time, color} = shiftTimes[shiftCode];
-                        dayEl.classList.add(`bg-${color}`);
+                        dayEl.classList.add(`bg-${shiftTimes[shiftCode].color}`);
                         const codeClass = (shiftCode === 'BB' || shiftCode === 'EE') ? 's-code blue' : 's-code';
-                        infoEl.innerHTML = `<span class="${codeClass}">${shiftCode}</span><span class="s-time">${time}</span>`;
+                        infoEl.innerHTML = `<span class="${codeClass}">${shiftCode}</span><span class="s-time">${shiftTimes[shiftCode].time}</span>`;
                     }
 
                     if (locCode) {
                         locBtn.textContent = locCode;
                         locBtn.setAttribute('data-loc', locCode);
-                        
-                        // 清除舊顏色樣式
                         locBtn.className = 'loc-btn'; 
                         
-                        // 如果不是 KT，就加上該地點自定義的顏色
-                        if (locCode !== 'KT') {
-                            const locObj = locations[locCode] || { color: 'orange' };
-                            locBtn.classList.add(`loc-${locObj.color}`);
-                        }
+                        // 點擊後動態套用新 Border 與細緻底色配色
+                        const locObj = locations[locCode] || { color: 'orange' };
+                        locBtn.classList.add(`loc-${locObj.color}`);
                     }
                 }
 
                 dayEl.querySelector('.shift-select').addEventListener('change', updateShiftInfo);
                 
-                // 地點循環點擊邏輯 (動態套用顏色)
                 dayEl.querySelector('.loc-btn').addEventListener('click', function() {
                     const currentLocs = getSortedLocCodes();
                     if (currentLocs.length === 0) return;
 
                     let currentLoc = this.getAttribute('data-loc') || 'KT';
                     let currentIndex = currentLocs.indexOf(currentLoc);
-                    
-                    let nextIndex = (currentIndex + 1) % currentLocs.length;
-                    let nextLoc = currentLocs[nextIndex];
+                    let nextLoc = currentLocs[(currentIndex + 1) % currentLocs.length];
 
                     this.textContent = nextLoc;
                     this.setAttribute('data-loc', nextLoc);
 
-                    // 重新整理樣式
                     this.className = 'loc-btn';
-                    if (nextLoc !== 'KT') {
-                        const locObj = locations[nextLoc] || { color: 'orange' };
-                        this.classList.add(`loc-${locObj.color}`);
-                    }
+                    const locObj = locations[nextLoc] || { color: 'orange' };
+                    this.classList.add(`loc-${locObj.color}`);
                 });
             }
         }
@@ -861,77 +805,52 @@
             const dayEl = this.parentElement;
             dayEl.classList.remove('bg-holiday', 'bg-morning', 'bg-noon', 'bg-night', 'bg-other');
 
-            if (!code) {
-                infoEl.innerHTML = '';
-                return;
-            }
-            const {time, color} = shiftTimes[code];
-            dayEl.classList.add(`bg-${color}`);
+            if (!code) { infoEl.innerHTML = ''; return; }
+            dayEl.classList.add(`bg-${shiftTimes[code].color}`);
             const codeClass = (code === 'BB' || code === 'EE') ? 's-code blue' : 's-code';
-            infoEl.innerHTML = `<span class="${codeClass}">${code}</span><span class="s-time">${time}</span>`;
+            infoEl.innerHTML = `<span class="${codeClass}">${code}</span><span class="s-time">${shiftTimes[code].time}</span>`;
         }
 
         document.getElementById('prev-month').addEventListener('click', async () => {
-            currentMonth--;
-            if (currentMonth < 0) {
-                currentMonth = 11;
-                currentYear--;
-            }
-            updateSyncStatus('loading', '載入上個月排班...');
+            currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; }
             await refreshCalendarDisplay();
-            updateSyncStatus('success', '同步成功');
         });
         document.getElementById('next-month').addEventListener('click', async () => {
-            currentMonth++;
-            if (currentMonth > 11) {
-                currentMonth = 0;
-                currentYear++;
-            }
-            updateSyncStatus('loading', '載入下個月排班...');
+            currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; }
             await refreshCalendarDisplay();
-            updateSyncStatus('success', '同步成功');
         });
         document.getElementById('year-select').addEventListener('change', async (e) => {
             currentYear = parseInt(e.target.value);
-            updateSyncStatus('loading', '載入該年度排班...');
             await refreshCalendarDisplay();
-            updateSyncStatus('success', '同步成功');
         });
-
-        document.getElementById('btn-manual-refresh').addEventListener('click', async () => {
-            await initApp();
-        });
+        document.getElementById('btn-manual-refresh').addEventListener('click', async () => { await initApp(); });
 
         document.getElementById('save-calendar').addEventListener('click', async () => {
             updateSyncStatus('loading', '正在將排班上傳至雲端資料庫...');
             const storageKey = getStorageKey(currentYear, currentMonth);
             const saveData = {};
-            let saveInfo = `✅ ${currentYear}年${currentMonth+1}月排班儲存並同步成功！\n\n最新排班：\n`;
+            let saveInfo = `✅ ${currentYear}年${currentMonth+1}月排班儲存成功！\n\n最新排班：\n`;
             let hasData = false;
 
             document.querySelectorAll('.day').forEach(dayEl => {
                 const date = dayEl.querySelector('.date')?.textContent;
                 if (!date) return; 
                 const shiftCode = dayEl.querySelector('.shift-select')?.value;
-                const locBtn = dayEl.querySelector('.loc-btn');
-                const locCode = locBtn.getAttribute('data-loc') || 'KT';
-                const locObj = locations[locCode] || { desc: locCode };
+                const locCode = dayEl.querySelector('.loc-btn').getAttribute('data-loc') || 'KT';
                 
                 saveData[date] = { shiftCode, locCode };
                 if (shiftCode) {
                     hasData = true;
-                    const shiftTime = shiftTimes[shiftCode]?.time || '';
-                    saveInfo += `📅 ${date}日 | 🕒 ${shiftCode}(${shiftTime}) | 📍 ${locCode}(${locObj.desc})\n`;
+                    saveInfo += `📅 ${date}日 | 🕒 ${shiftCode}(${shiftTimes[shiftCode]?.time || ''}) | 📍 ${locCode}\n`;
                 }
             });
 
             const success = await cloudDB.set(storageKey, saveData);
             if (success) {
-                updateSyncStatus('success', '排班已同步至雲端！兩部手機皆可查看');
+                updateSyncStatus('success', '排班已同步至雲端！');
                 alert(hasData ? saveInfo : `✅ ${currentYear}年${currentMonth+1}月排班已清空並同步！`);
             } else {
-                updateSyncStatus('error', '同步失敗，已儲存在手機本地，請稍後重試');
-                alert('⚠️ 同步失敗，資料僅儲存於當前手機快取，請檢查網路連線。');
+                alert('⚠️ 同步失敗，請檢查網路連線。');
             }
         });
 
@@ -939,11 +858,8 @@
         function renderShiftList() {
             const listContainer = document.getElementById('shift-list');
             listContainer.innerHTML = '';
-            
             const sortedShiftCodes = getSortedShiftCodes();
-            const colorName = {
-                holiday: '放假-淺啡', morning: '早更-粉紅', noon: '午間-深啡', night: '晚更-深藍', other: '其他-淺綠'
-            };
+            const colorName = { holiday: '放假-淺啡', morning: '早更-粉紅', noon: '午間-深啡', night: '晚更-深藍', other: '其他-淺綠' };
             
             sortedShiftCodes.forEach(code => {
                 const {time, color} = shiftTimes[code];
@@ -969,21 +885,17 @@
             document.querySelectorAll('.btn-edit').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const code = e.target.dataset.code;
-                    const {time, color} = shiftTimes[code];
                     editShiftCode = code;
                     document.getElementById('shift-code').value = code;
-                    document.getElementById('shift-time').value = time;
-                    document.getElementById('shift-color').value = color;
+                    document.getElementById('shift-time').value = shiftTimes[code].time;
+                    document.getElementById('shift-color').value = shiftTimes[code].color;
                     document.getElementById('btn-add-shift').textContent = '保存編輯';
                 });
             });
             document.querySelectorAll('.btn-delete').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const code = e.target.dataset.code;
-                    if (confirm(`確定刪除班次【${code}】嗎？`)) {
-                        delete shiftTimes[code];
-                        renderShiftList();
-                    }
+                    if (confirm(`確定刪除班次【${code}】嗎？`)) { delete shiftTimes[code]; renderShiftList(); }
                 });
             });
         }
@@ -993,7 +905,6 @@
             const code = document.getElementById('shift-code').value.trim();
             const time = document.getElementById('shift-time').value.trim();
             const color = document.getElementById('shift-color').value;
-            if (!code || !time) return;
 
             if (editShiftCode) {
                 delete shiftTimes[editShiftCode];
@@ -1001,10 +912,7 @@
                 editShiftCode = null;
                 document.getElementById('btn-add-shift').textContent = '新增班次';
             } else {
-                if (shiftTimes[code]) {
-                    alert(`⚠️ 班次【${code}】已存在！`);
-                    return;
-                }
+                if (shiftTimes[code]) { alert(`⚠️ 班次【${code}】已存在！`); return; }
                 shiftTimes[code] = {time, color};
             }
             document.getElementById('shift-form').reset();
@@ -1012,17 +920,10 @@
         });
 
         document.getElementById('save-shifts').addEventListener('click', async () => {
-            updateSyncStatus('loading', '正在儲存班次設定到雲端...');
-            const success = await cloudDB.set('shiftTimes', shiftTimes);
-            if (success) {
-                updateSyncStatus('success', '所有班次設定已同步至雲端');
-                alert(`✅ 所有班次已同步至雲端資料庫！共 ${Object.keys(shiftTimes).length} 個班次～`);
-            } else {
-                updateSyncStatus('error', '班次同步失敗');
-            }
+            if (await cloudDB.set('shiftTimes', shiftTimes)) alert(`✅ 所有班次已同步至雲端！`);
         });
 
-        // ---------------------- 地點管理功能 ----------------------
+        // ---------------------- 地點管理功能 (完美修復 Edit功能) ----------------------
         function renderLocationList() {
             const listContainer = document.getElementById('location-list');
             listContainer.innerHTML = '';
@@ -1042,17 +943,34 @@
                         ${code === 'KT' ? '<br><span style="font-size:12px;color:#ff9800;">默認地點</span>' : ''}
                     </div>
                     <div class="location-actions">
+                        <button class="loc-btn-edit" data-code="${code}">編輯</button>
                         <button class="loc-btn-delete" data-code="${code}">刪除</button>
                     </div>
                 `;
                 listContainer.appendChild(item);
             });
-            
+            bindLocationActions();
+        }
+
+        function bindLocationActions() {
+            // 編輯地點
+            document.querySelectorAll('.loc-btn-edit').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const code = e.target.dataset.code;
+                    editLocCode = code; // 記錄正在編輯的原本簡寫
+                    document.getElementById('location-code').value = code;
+                    document.getElementById('location-desc').value = locations[code].desc;
+                    document.getElementById('location-color').value = locations[code].color || 'orange';
+                    document.getElementById('btn-add-location').textContent = '保存編輯';
+                });
+            });
+
+            // 刪除地點
             document.querySelectorAll('.loc-btn-delete').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const code = e.target.dataset.code;
                     if (code === 'KT' || code === 'TST') {
-                        alert('⚠️ 系統核心預設地點「KT」與「TST」不可刪除！');
+                        alert('⚠️ 核心預設地點「KT」與「TST」不可刪除，但您可以使用【編輯】來修改它們！');
                         return;
                     }
                     if (confirm(`確定刪除地點【${code}】嗎？`)) {
@@ -1070,25 +988,36 @@
             const color = document.getElementById('location-color').value;
             if (!code || !desc) return;
 
-            if (locations[code]) {
-                alert(`⚠️ 地點簡寫【${code}】已存在！`);
-                return;
+            if (editLocCode) {
+                // 如果修改了簡寫(Code)，且新簡寫已被別人佔用
+                if (editLocCode !== code && locations[code]) {
+                    alert(`⚠️ 地點簡寫【${code}】已存在，請換一個簡寫！`);
+                    return;
+                }
+                // 如果是核心 KT/TST 卻想連簡寫一起改，進行提示阻擋
+                if ((editLocCode === 'KT' || editLocCode === 'TST') && editLocCode !== code) {
+                    alert('⚠️ 核心預設地點的「簡寫碼(KT/TST)」不能更改，只能更改全名與顏色！');
+                    return;
+                }
+                delete locations[editLocCode];
+                locations[code] = { desc, color };
+                editLocCode = null;
+                document.getElementById('btn-add-location').textContent = '新增地點';
+            } else {
+                if (locations[code]) {
+                    alert(`⚠️ 地點簡寫【${code}】已存在！`);
+                    return;
+                }
+                locations[code] = { desc, color };
             }
-            locations[code] = { desc, color };
+            
             document.getElementById('location-form').reset();
-            document.getElementById('location-color').value = 'orange'; // 重設選單
+            document.getElementById('location-color').value = 'orange';
             renderLocationList();
         });
 
         document.getElementById('save-locations').addEventListener('click', async () => {
-            updateSyncStatus('loading', '正在儲存地點設定到雲端...');
-            const success = await cloudDB.set('locations', locations);
-            if (success) {
-                updateSyncStatus('success', '所有地點設定已同步至雲端');
-                alert(`✅ 所有地點已同步至雲端！`);
-            } else {
-                updateSyncStatus('error', '地點同步失敗');
-            }
+            if (await cloudDB.set('locations', locations)) alert(`✅ 所有地點與顏色設定已同步至雲端！`);
         });
 
         window.onload = initApp;
