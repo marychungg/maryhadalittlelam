@@ -44,7 +44,7 @@
             cursor: pointer;
             font-size: 11px;
         }
-        /* 頁面切換按鈕 - 3個（排班+班次+地點） */
+        /* 頁面切換按鈕 - 3個 */
         .page-tabs {
             max-width: 600px;
             margin: 0 auto 15px;
@@ -83,7 +83,7 @@
         .container.active {
             display: block;
         }
-        /* 月曆頁面樣式 - 核心不溢出 */
+        /* 月曆頁面樣式 */
         .calendar-header {
             background-color: #ffb74d;
             color: white;
@@ -148,9 +148,9 @@
             color: #f57c00;
         }
         .weekday.sun {
-            color: #e53935; /* 周日紅色 */
+            color: #e53935;
         }
-        /* 日期容器 - 固定高度不溢出 */
+        /* 日期容器 */
         .days {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -158,7 +158,6 @@
             padding: 10px;
             grid-auto-rows: 95px;
         }
-        /* 日期框 - 極致壓縮間距 */
         .day {
             border-radius: 8px;
             padding: 4px 3px;
@@ -243,11 +242,12 @@
         .s-time {
             font-weight: 400;
         }
-        /* 地點按鈕 */
+        
+        /* === 地點動態顏色樣式 === */
         .loc-btn {
             width: 100%;
             padding: 1px 0;
-            border: 1px solid #ff9800;
+            border: 1px solid #999;
             border-radius: 3px;
             font-size: 9px;
             cursor: pointer;
@@ -255,12 +255,28 @@
             flex-shrink: 0;
             height: 16px;
             background: #fff;
-            color: #ff9800;
+            color: #666;
         }
-        .loc-btn.active {
-            background: #ff9800;
+        /* 不同顏色的亮起狀態 */
+        .loc-btn.loc-orange { background: #ff9800 !important; border-color: #e68a00 !important; color: white !important; }
+        .loc-btn.loc-blue   { background: #2196f3 !important; border-color: #1976d2 !important; color: white !important; }
+        .loc-btn.loc-purple { background: #9c27b0 !important; border-color: #7b1fa2 !important; color: white !important; }
+        .loc-btn.loc-red    { background: #e53935 !important; border-color: #c62828 !important; color: white !important; }
+
+        /* 地點清單小圓點標籤 */
+        .loc-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
             color: white;
+            font-size: 11px;
+            font-weight: bold;
         }
+        .bg-orange { background-color: #ff9800; }
+        .bg-blue   { background-color: #2196f3; }
+        .bg-purple { background-color: #9c27b0; }
+        .bg-red    { background-color: #e53935; }
+
         /* 按鈕通用樣式 */
         .btn-save {
             display: block;
@@ -279,7 +295,7 @@
         .btn-save:hover {
             background: #8c6d53;
         }
-        /* 班次/地點管理頁面通用樣式 */
+        /* 管理頁面通用樣式 */
         .manage-header {
             background-color: #ffb74d;
             color: white;
@@ -530,6 +546,15 @@
                 <label for="location-desc">地點全名（如觀塘、尖沙咀）</label>
                 <input type="text" id="location-desc" class="form-input" placeholder="請輸入地點全名" required>
             </div>
+            <div class="form-item">
+                <label for="location-color">選擇顯示顏色</label>
+                <select id="location-color" class="form-input" required>
+                    <option value="orange" selected>橙色 (預設)</option>
+                    <option value="blue">藍色</option>
+                    <option value="purple">紫色</option>
+                    <option value="red">紅色</option>
+                </select>
+            </div>
             <button type="submit" class="btn-add" id="btn-add-location">新增地點</button>
         </form>
         <div class="location-list" id="location-list"></div>
@@ -552,7 +577,7 @@
         let editShiftCode = null; 
         let editLocCode = null;   
 
-        // 顏色順序權重 (用於依顏色分組排序班次)
+        // 班次顏色排序權重
         const colorOrder = {
             'holiday': 1,
             'morning': 2,
@@ -561,7 +586,6 @@
             'other': 5
         };
 
-        // 雲端資料庫讀寫封裝 (純 Fetch 實現，免裝 SDK)
         const cloudDB = {
             async get(key, defaultValue) {
                 try {
@@ -584,7 +608,6 @@
                 }
             },
             async set(key, value) {
-                // 同步儲存至本地，確保離線可用
                 localStorage.setItem(key, JSON.stringify(value));
                 try {
                     await fetch(`${SUPABASE_URL}/rest/v1/momo_store`, {
@@ -593,7 +616,7 @@
                             'apikey': SUPABASE_KEY,
                             'Authorization': `Bearer ${SUPABASE_KEY}`,
                             'Content-Type': 'application/json',
-                            'Prefer': 'resolution=merge-duplicates' // 存在則覆蓋 (Upsert)
+                            'Prefer': 'resolution=merge-duplicates'
                         },
                         body: JSON.stringify({ key: key, value: value, updated_at: new Date() })
                     });
@@ -620,7 +643,6 @@
             }
         }
 
-        // 異步全面初始化，優先從雲端下載數據
         async function initApp() {
             updateSyncStatus('loading', '正在從雲端載入最新排班與設定...');
             
@@ -660,9 +682,21 @@
             };
             shiftTimes = await cloudDB.get('shiftTimes', defaultShifts);
 
-            // 2. 載入地點數據
-            const defaultLocs = { "KT": "啟德", "TST": "尖沙咀" };
-            locations = await cloudDB.get('locations', defaultLocs);
+            // 2. 載入地點數據 (格式轉為支援顏色： { 簡寫: { desc: 全名, color: 顏色 } })
+            const defaultLocs = { 
+                "KT": { desc: "啟德", color: "orange" }, 
+                "TST": { desc: "尖沙咀", color: "orange" } 
+            };
+            let rawLocs = await cloudDB.get('locations', defaultLocs);
+            // 兼容舊格式相容處理
+            locations = {};
+            Object.entries(rawLocs).forEach(([code, val]) => {
+                if (typeof val === 'string') {
+                    locations[code] = { desc: val, color: 'orange' };
+                } else {
+                    locations[code] = val;
+                }
+            });
 
             // 3. 渲染頁面
             await refreshCalendarDisplay();
@@ -672,14 +706,12 @@
             updateSyncStatus('success', '已連線至雲端，資料為最新狀態');
         }
 
-        // 抽取渲染月曆的流程，因為切換月份或更新時需要重複讀取雲端
         async function refreshCalendarDisplay() {
             const storageKey = getStorageKey(currentYear, currentMonth);
             const calendarData = await cloudDB.get(storageKey, {});
             renderCalendar(currentYear, currentMonth, calendarData);
         }
 
-        // 頁面切換
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -701,21 +733,17 @@
             return `shift_${year}-${fixedMonth}`;
         }
 
-        // 獲取按顏色權重及名稱排序後的班次鍵名陣列
         function getSortedShiftCodes() {
             return Object.keys(shiftTimes).sort((a, b) => {
                 const colorA = shiftTimes[a].color;
                 const colorB = shiftTimes[b].color;
                 const weightA = colorOrder[colorA] || 99;
                 const weightB = colorOrder[colorB] || 99;
-                if (weightA !== weightB) {
-                    return weightA - weightB;
-                }
+                if (weightA !== weightB) return weightA - weightB;
                 return a.localeCompare(b, 'zh-CN', { numeric: true });
             });
         }
 
-        // 獲取排序後的地點鍵名陣列（確保 KT 與 TST 在最前面，接著依字母排序）
         function getSortedLocCodes() {
             return Object.keys(locations).sort((a, b) => {
                 if (a === 'KT') return -1;
@@ -745,14 +773,12 @@
                 daysContainer.appendChild(emptyDay);
             }
 
-            // 使用全新依顏色排序的班次選項
             const sortedShiftCodes = getSortedShiftCodes();
             let shiftOptions = '<option value="" selected disabled></option>';
             sortedShiftCodes.forEach(shift => {
                 shiftOptions += `<option value="${shift}">${shift}</option>`;
             });
 
-            // 取得目前設定的所有地點清單（用於循環切換）
             const availableLocs = getSortedLocCodes();
 
             for (let day = 1; day <= daysInMonth; day++) {
@@ -764,7 +790,6 @@
                                   (year === currentYear && month === todayMonth && day < todayDate);
                 if (isExpired) dayEl.classList.add('expired');
 
-                // 預設按鈕文字先填入系統預設的第一個地點（通常為 KT）
                 const defaultLoc = availableLocs[0] || 'KT';
 
                 dayEl.innerHTML = `
@@ -775,7 +800,6 @@
                 `;
                 daysContainer.appendChild(dayEl);
 
-                // 如果雲端已有此日期的歷史資料
                 if (calendarData[day]) {
                     const { shiftCode, locCode } = calendarData[day];
                     const select = dayEl.querySelector('.shift-select');
@@ -790,42 +814,42 @@
                         infoEl.innerHTML = `<span class="${codeClass}">${shiftCode}</span><span class="s-time">${time}</span>`;
                     }
 
-                    // 讀取地點，如果儲存的地點不在現有清單中，依然允許顯示
                     if (locCode) {
                         locBtn.textContent = locCode;
                         locBtn.setAttribute('data-loc', locCode);
+                        
+                        // 清除舊顏色樣式
+                        locBtn.className = 'loc-btn'; 
+                        
+                        // 如果不是 KT，就加上該地點自定義的顏色
                         if (locCode !== 'KT') {
-                            locBtn.classList.add('active');
-                        } else {
-                            locBtn.classList.remove('active');
+                            const locObj = locations[locCode] || { color: 'orange' };
+                            locBtn.classList.add(`loc-${locObj.color}`);
                         }
                     }
                 }
 
                 dayEl.querySelector('.shift-select').addEventListener('change', updateShiftInfo);
                 
-                // 地點按鈕多點循環點擊邏輯
+                // 地點循環點擊邏輯 (動態套用顏色)
                 dayEl.querySelector('.loc-btn').addEventListener('click', function() {
-                    // 重新實時獲取最新的地點清單，確保後台剛新增完這裡能立刻跟進
                     const currentLocs = getSortedLocCodes();
                     if (currentLocs.length === 0) return;
 
                     let currentLoc = this.getAttribute('data-loc') || 'KT';
                     let currentIndex = currentLocs.indexOf(currentLoc);
                     
-                    // 計算下一個地點的 Index
                     let nextIndex = (currentIndex + 1) % currentLocs.length;
                     let nextLoc = currentLocs[nextIndex];
 
-                    // 更新按鈕狀態與數值
                     this.textContent = nextLoc;
                     this.setAttribute('data-loc', nextLoc);
 
-                    // 非預設地點（非KT）就亮起顏色
+                    // 重新整理樣式
+                    this.className = 'loc-btn';
                     if (nextLoc !== 'KT') {
-                        this.classList.add('active');
-                    } else {
-                        this.classList.remove('active');
+                        const locObj = locations[nextLoc] || { color: 'orange' };
+                        this.classList.add(`loc-${locObj.color}`);
                     }
                 });
             }
@@ -847,7 +871,6 @@
             infoEl.innerHTML = `<span class="${codeClass}">${code}</span><span class="s-time">${time}</span>`;
         }
 
-        // 月份切換加入雲端載入
         document.getElementById('prev-month').addEventListener('click', async () => {
             currentMonth--;
             if (currentMonth < 0) {
@@ -875,12 +898,10 @@
             updateSyncStatus('success', '同步成功');
         });
 
-        // 手動整理按鈕
         document.getElementById('btn-manual-refresh').addEventListener('click', async () => {
             await initApp();
         });
 
-        // 儲存排班到雲端
         document.getElementById('save-calendar').addEventListener('click', async () => {
             updateSyncStatus('loading', '正在將排班上傳至雲端資料庫...');
             const storageKey = getStorageKey(currentYear, currentMonth);
@@ -894,13 +915,13 @@
                 const shiftCode = dayEl.querySelector('.shift-select')?.value;
                 const locBtn = dayEl.querySelector('.loc-btn');
                 const locCode = locBtn.getAttribute('data-loc') || 'KT';
-                const locName = locations[locCode] || locCode; 
+                const locObj = locations[locCode] || { desc: locCode };
                 
                 saveData[date] = { shiftCode, locCode };
                 if (shiftCode) {
                     hasData = true;
                     const shiftTime = shiftTimes[shiftCode]?.time || '';
-                    saveInfo += `📅 ${date}日 | 🕒 ${shiftCode}(${shiftTime}) | 📍 ${locCode}(${locName})\n`;
+                    saveInfo += `📅 ${date}日 | 🕒 ${shiftCode}(${shiftTime}) | 📍 ${locCode}(${locObj.desc})\n`;
                 }
             });
 
@@ -919,7 +940,6 @@
             const listContainer = document.getElementById('shift-list');
             listContainer.innerHTML = '';
             
-            // 使用新版依顏色與代碼排序的方法
             const sortedShiftCodes = getSortedShiftCodes();
             const colorName = {
                 holiday: '放假-淺啡', morning: '早更-粉紅', noon: '午間-深啡', night: '晚更-深藍', other: '其他-淺綠'
@@ -1007,17 +1027,19 @@
             const listContainer = document.getElementById('location-list');
             listContainer.innerHTML = '';
             
-            // 地點使用自定義排序渲染
             const sortedLocs = getSortedLocCodes();
+            const colorNames = { orange: '橙色', blue: '藍色', purple: '紫色', red: '紅色' };
+
             sortedLocs.forEach(code => {
-                const desc = locations[code];
+                const { desc, color } = locations[code];
                 const item = document.createElement('div');
                 item.className = `location-item ${code === 'KT' ? 'active-loc' : ''}`;
                 item.innerHTML = `
                     <div class="location-item-info">
                         <span class="location-item-code">${code}</span>
                         <span class="location-item-desc">${desc}</span>
-                        ${code === 'KT' ? '<span style="font-size:12px;color:#ff9800;">默認地點</span>' : ''}
+                        <span class="loc-badge bg-${color}">標籤顏色：${colorNames[color] || '橙色'}</span>
+                        ${code === 'KT' ? '<br><span style="font-size:12px;color:#ff9800;">默認地點</span>' : ''}
                     </div>
                     <div class="location-actions">
                         <button class="loc-btn-delete" data-code="${code}">刪除</button>
@@ -1045,14 +1067,16 @@
             e.preventDefault();
             const code = document.getElementById('location-code').value.trim().toUpperCase();
             const desc = document.getElementById('location-desc').value.trim();
+            const color = document.getElementById('location-color').value;
             if (!code || !desc) return;
 
             if (locations[code]) {
                 alert(`⚠️ 地點簡寫【${code}】已存在！`);
                 return;
             }
-            locations[code] = desc;
+            locations[code] = { desc, color };
             document.getElementById('location-form').reset();
+            document.getElementById('location-color').value = 'orange'; // 重設選單
             renderLocationList();
         });
 
@@ -1067,7 +1091,6 @@
             }
         });
 
-        // 啟動應用
         window.onload = initApp;
     </script>
 </body>
