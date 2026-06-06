@@ -552,6 +552,15 @@
         let editShiftCode = null; 
         let editLocCode = null;   
 
+        // 顏色順序權重 (用於依顏色分組排序班次)
+        const colorOrder = {
+            'holiday': 1,
+            'morning': 2,
+            'noon': 3,
+            'night': 4,
+            'other': 5
+        };
+
         // 雲端資料庫讀寫封裝 (純 Fetch 實現，免裝 SDK)
         const cloudDB = {
             async get(key, defaultValue) {
@@ -692,7 +701,32 @@
             return `shift_${year}-${fixedMonth}`;
         }
 
-        // 修改後的月曆渲染（傳入從雲端拿到的 calendarData）
+        // 獲取按顏色權重及名稱排序後的班次鍵名陣列
+        function getSortedShiftCodes() {
+            return Object.keys(shiftTimes).sort((a, b) => {
+                const colorA = shiftTimes[a].color;
+                const colorB = shiftTimes[b].color;
+                const weightA = colorOrder[colorA] || 99;
+                const weightB = colorOrder[colorB] || 99;
+                if (weightA !== weightB) {
+                    return weightA - weightB;
+                }
+                return a.localeCompare(b, 'zh-CN', { numeric: true });
+            });
+        }
+
+        // 獲取排序後的地點鍵名陣列（確保 KT 與 TST 在最前面，接著依字母排序）
+        function getSortedLocCodes() {
+            return Object.keys(locations).sort((a, b) => {
+                if (a === 'KT') return -1;
+                if (b === 'KT') return 1;
+                if (a === 'TST') return -1;
+                if (b === 'TST') return 1;
+                return a.localeCompare(b);
+            });
+        }
+
+        // 月曆渲染
         function renderCalendar(year, month, calendarData) {
             const daysContainer = document.getElementById('days-container');
             daysContainer.innerHTML = '';
@@ -711,11 +745,15 @@
                 daysContainer.appendChild(emptyDay);
             }
 
-            const sortedShiftCodes = Object.keys(shiftTimes).sort((a, b) => a.localeCompare(b, 'zh-CN', { numeric: true }));
+            // 使用全新依顏色排序的班次選項
+            const sortedShiftCodes = getSortedShiftCodes();
             let shiftOptions = '<option value="" selected disabled></option>';
             sortedShiftCodes.forEach(shift => {
                 shiftOptions += `<option value="${shift}">${shift}</option>`;
             });
+
+            // 取得目前設定的所有地點清單（用於循環切換）
+            const availableLocs = getSortedLocCodes();
 
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayEl = document.createElement('div');
@@ -726,14 +764,18 @@
                                   (year === currentYear && month === todayMonth && day < todayDate);
                 if (isExpired) dayEl.classList.add('expired');
 
+                // 預設按鈕文字先填入系統預設的第一個地點（通常為 KT）
+                const defaultLoc = availableLocs[0] || 'KT';
+
                 dayEl.innerHTML = `
                     <div class="date">${day}</div>
                     <select class="shift-select">${shiftOptions}</select>
                     <div class="shift-info"></div>
-                    <button class="loc-btn">KT</button>
+                    <button class="loc-btn" data-loc="${defaultLoc}">${defaultLoc}</button>
                 `;
                 daysContainer.appendChild(dayEl);
 
+                // 如果雲端已有此日期的歷史資料
                 if (calendarData[day]) {
                     const { shiftCode, locCode } = calendarData[day];
                     const select = dayEl.querySelector('.shift-select');
@@ -748,16 +790,43 @@
                         infoEl.innerHTML = `<span class="${codeClass}">${shiftCode}</span><span class="s-time">${time}</span>`;
                     }
 
-                    if (locCode === 'TST') {
-                        locBtn.classList.add('active');
-                        locBtn.textContent = 'TST';
+                    // 讀取地點，如果儲存的地點不在現有清單中，依然允許顯示
+                    if (locCode) {
+                        locBtn.textContent = locCode;
+                        locBtn.setAttribute('data-loc', locCode);
+                        if (locCode !== 'KT') {
+                            locBtn.classList.add('active');
+                        } else {
+                            locBtn.classList.remove('active');
+                        }
                     }
                 }
 
                 dayEl.querySelector('.shift-select').addEventListener('change', updateShiftInfo);
+                
+                // 地點按鈕多點循環點擊邏輯
                 dayEl.querySelector('.loc-btn').addEventListener('click', function() {
-                    this.classList.toggle('active');
-                    this.textContent = this.classList.contains('active') ? 'TST' : 'KT';
+                    // 重新實時獲取最新的地點清單，確保後台剛新增完這裡能立刻跟進
+                    const currentLocs = getSortedLocCodes();
+                    if (currentLocs.length === 0) return;
+
+                    let currentLoc = this.getAttribute('data-loc') || 'KT';
+                    let currentIndex = currentLocs.indexOf(currentLoc);
+                    
+                    // 計算下一個地點的 Index
+                    let nextIndex = (currentIndex + 1) % currentLocs.length;
+                    let nextLoc = currentLocs[nextIndex];
+
+                    // 更新按鈕狀態與數值
+                    this.textContent = nextLoc;
+                    this.setAttribute('data-loc', nextLoc);
+
+                    // 非預設地點（非KT）就亮起顏色
+                    if (nextLoc !== 'KT') {
+                        this.classList.add('active');
+                    } else {
+                        this.classList.remove('active');
+                    }
                 });
             }
         }
@@ -824,7 +893,7 @@
                 if (!date) return; 
                 const shiftCode = dayEl.querySelector('.shift-select')?.value;
                 const locBtn = dayEl.querySelector('.loc-btn');
-                const locCode = locBtn.classList.contains('active') ? 'TST' : 'KT';
+                const locCode = locBtn.getAttribute('data-loc') || 'KT';
                 const locName = locations[locCode] || locCode; 
                 
                 saveData[date] = { shiftCode, locCode };
@@ -849,11 +918,15 @@
         function renderShiftList() {
             const listContainer = document.getElementById('shift-list');
             listContainer.innerHTML = '';
-            const sortedShifts = Object.entries(shiftTimes).sort((a, b) => a[0].localeCompare(b, 'zh-CN', { numeric: true }));
+            
+            // 使用新版依顏色與代碼排序的方法
+            const sortedShiftCodes = getSortedShiftCodes();
             const colorName = {
                 holiday: '放假-淺啡', morning: '早更-粉紅', noon: '午間-深啡', night: '晚更-深藍', other: '其他-淺綠'
             };
-            sortedShifts.forEach(([code, {time, color}]) => {
+            
+            sortedShiftCodes.forEach(code => {
+                const {time, color} = shiftTimes[code];
                 const item = document.createElement('div');
                 item.className = `shift-item bg-${color}`;
                 item.innerHTML = `
@@ -933,8 +1006,11 @@
         function renderLocationList() {
             const listContainer = document.getElementById('location-list');
             listContainer.innerHTML = '';
-            const sortedLocs = Object.entries(locations).sort((a, b) => a[0].localeCompare(b));
-            sortedLocs.forEach(([code, desc]) => {
+            
+            // 地點使用自定義排序渲染
+            const sortedLocs = getSortedLocCodes();
+            sortedLocs.forEach(code => {
+                const desc = locations[code];
                 const item = document.createElement('div');
                 item.className = `location-item ${code === 'KT' ? 'active-loc' : ''}`;
                 item.innerHTML = `
