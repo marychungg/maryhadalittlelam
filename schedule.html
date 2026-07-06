@@ -664,6 +664,7 @@
                 "KCTA": {time: "23:00 - 07:30", color: "other"},
             };
             shiftTimes = await cloudDB.get('shiftTimes', defaultShifts);
+            locations = await cloudDB.get('locations', defaultLocs);
 
             const defaultLocs = { "KT": { desc: "啟德", color: "orange" }, "TST": { desc: "尖沙咀", color: "orange" }, "LMC": { desc: "落馬洲", color: "orange" } };
             let rawLocs = await cloudDB.get('locations', defaultLocs);
@@ -686,9 +687,13 @@
         }
 
         document.getElementById('default-location').addEventListener('change', async (e) => {
-            defaultLocation = e.target.value;
-            await cloudDB.set('defaultLocation', defaultLocation); // 儲存新的預設地點
-            renderLocationList(); // 重新渲染地點列表
+            const selectedLocation = e.target.value;
+            const success = await cloudDB.set('defaultLocation', selectedLocation); // 儲存新的預設地點
+            if (success) {
+                alert(`✅ 預設地點已更新為 ${selectedLocation}`);
+            } else {
+                alert('⚠️ 更新預設地點失敗，請檢查網路連線。');
+            }
         });
 
         async function refreshCalendarDisplay() {
@@ -1033,7 +1038,19 @@
         });
 
         document.getElementById('save-locations').addEventListener('click', async () => {
-            if (await cloudDB.set('locations', locations)) alert(`✅ 所有地點與顏色設定已同步至雲端！`);
+            const locationsData = {};
+            for (const code in locations) {
+                locationsData[code] = locations[code];
+            }
+
+            // 儲存所有地點到 Supabase
+            const success = await cloudDB.set('locations', locationsData);
+            
+            if (success) {
+                alert('✅ 所有地點已同步至雲端！');
+            } else {
+                alert('⚠️ 同步失敗，請檢查網路連線。');
+            }
         });
 
         window.onload = initApp;
