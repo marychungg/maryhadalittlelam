@@ -685,6 +685,12 @@
             updateSyncStatus('success', '已連線至雲端，資料為最新狀態');
         }
 
+        document.getElementById('default-location').addEventListener('change', async (e) => {
+            defaultLocation = e.target.value;
+            await cloudDB.set('defaultLocation', defaultLocation); // 儲存新的預設地點
+            renderLocationList(); // 重新渲染地點列表
+        });
+
         async function refreshCalendarDisplay() {
             const storageKey = getStorageKey(currentYear, currentMonth);
             const calendarData = await cloudDB.get(storageKey, {});
@@ -948,13 +954,13 @@
             sortedLocs.forEach(code => {
                 const { desc, color } = locations[code];
                 const item = document.createElement('div');
-                item.className = `location-item ${code === 'KT' ? 'active-loc' : ''}`;
+                item.className = `location-item ${code === defaultLocation ? 'active-loc' : ''}`; // 使當前預設地點高亮
                 item.innerHTML = `
                     <div class="location-item-info">
                         <span class="location-item-code">${code}</span>
                         <span class="location-item-desc">${desc}</span>
                         <span class="loc-badge bg-${color}">標籤顏色：${colorNames[color] || '橙色'}</span>
-                        ${code === 'KT' ? '<br><span style="font-size:12px;color:#ff9800;">默認地點</span>' : ''}
+                        ${code === defaultLocation ? '<br><span style="font-size:12px;color:#ff9800;">默認地點</span>' : ''}
                     </div>
                     <div class="location-actions">
                         <button class="loc-btn-edit" data-code="${code}">編輯</button>
