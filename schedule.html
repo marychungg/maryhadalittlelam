@@ -537,14 +537,14 @@
     </div>
 
     <div class="container" id="location-manage">
-        <div class="manage-header">地點管理 | 新增/編輯/刪除（默認KT）</div>
+        <div class="manage-header">地點管理 | 新增/編輯/刪除（默認LMC）</div>
         <form class="manage-form" id="location-form">
             <div class="form-item">
-                <label for="location-code">地點簡寫（如KT、TST）</label>
+                <label for="location-code">地點簡寫（如LMC、TST）</label>
                 <input type="text" id="location-code" class="form-input" placeholder="請輸入2-3個字簡寫" required>
             </div>
             <div class="form-item">
-                <label for="location-desc">地點全名（如觀塘、尖沙咀）</label>
+                <label for="location-desc">地點全名（如落馬洲、尖沙咀）</label>
                 <input type="text" id="location-desc" class="form-input" placeholder="請輸入地點全名" required>
             </div>
             <div class="form-item">
@@ -554,6 +554,16 @@
                     <option value="blue">藍色</option>
                     <option value="purple">紫色</option>
                     <option value="red">紅色</option>
+                </select>
+            </div>
+            <div class="form-item">
+                <label for="default-location">選擇預設地點</label>
+                <select id="default-location" class="form-input" required>
+                    <option value="KT">啟德</option>
+                    <option value="SW">上環</option>
+                    <option value="TST">尖沙咀</option>
+                    <option value="高鐵">高鐵</option>
+                    <option value="LMC">落馬洲</option>
                 </select>
             </div>
             <button type="submit" class="btn-add" id="btn-add-location">新增地點</button>
@@ -576,6 +586,7 @@
         let locations = {};  
         let editShiftCode = null; 
         let editLocCode = null;   
+        let defaultLocation = 'KT'; // 預設地點
 
         const colorOrder = { 'holiday': 1, 'morning': 2, 'noon': 3, 'night': 4, 'other': 5 };
 
@@ -654,7 +665,7 @@
             };
             shiftTimes = await cloudDB.get('shiftTimes', defaultShifts);
 
-            const defaultLocs = { "KT": { desc: "啟德", color: "orange" }, "TST": { desc: "尖沙咀", color: "orange" } };
+            const defaultLocs = { "KT": { desc: "啟德", color: "orange" }, "TST": { desc: "尖沙咀", color: "orange" }, "LMC": { desc: "落馬洲", color: "orange" } };
             let rawLocs = await cloudDB.get('locations', defaultLocs);
             locations = {};
             Object.entries(rawLocs).forEach(([code, val]) => {
@@ -664,6 +675,9 @@
                     locations[code] = val;
                 }
             });
+
+            defaultLocation = await cloudDB.get('defaultLocation', 'KT'); // 獲取預設地點
+            document.getElementById('default-location').value = defaultLocation; // 設置預設地點
 
             await refreshCalendarDisplay();
             renderShiftList();
@@ -745,7 +759,7 @@
                                   (year === currentYear && month === todayMonth && day < todayDate);
                 if (isExpired) dayEl.classList.add('expired');
 
-                const defaultLoc = availableLocs[0] || 'KT';
+                const defaultLoc = availableLocs.includes(defaultLocation) ? defaultLocation : availableLocs[0] || 'KT';
 
                 dayEl.innerHTML = `
                     <div class="date">${day}</div>
@@ -836,7 +850,7 @@
                 const date = dayEl.querySelector('.date')?.textContent;
                 if (!date) return; 
                 const shiftCode = dayEl.querySelector('.shift-select')?.value;
-                const locCode = dayEl.querySelector('.loc-btn').getAttribute('data-loc') || 'KT';
+                const locCode = dayEl.querySelector('.loc-btn').getAttribute('data-loc') || defaultLocation;
                 
                 saveData[date] = { shiftCode, locCode };
                 if (shiftCode) {
