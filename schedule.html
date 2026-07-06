@@ -537,10 +537,10 @@
     </div>
 
     <div class="container" id="location-manage">
-        <div class="manage-header">地點管理 | 新增/編輯/刪除（默認LMC）</div>
+        <div class="manage-header">地點管理 | 新增/編輯/刪除（默認KT）</div>
         <form class="manage-form" id="location-form">
             <div class="form-item">
-                <label for="location-code">地點簡寫（如LMC、TST）</label>
+                <label for="location-code">地點簡寫（如KT、TST）</label>
                 <input type="text" id="location-code" class="form-input" placeholder="請輸入2-3個字簡寫" required>
             </div>
             <div class="form-item">
@@ -654,7 +654,7 @@
             };
             shiftTimes = await cloudDB.get('shiftTimes', defaultShifts);
 
-            const defaultLocs = { "LMC": { desc: "落馬洲", color: "orange" }, "TST": { desc: "尖沙咀", color: "orange" } };
+            const defaultLocs = { "KT": { desc: "啟德", color: "orange" }, "TST": { desc: "尖沙咀", color: "orange" } };
             let rawLocs = await cloudDB.get('locations', defaultLocs);
             locations = {};
             Object.entries(rawLocs).forEach(([code, val]) => {
@@ -707,7 +707,7 @@
 
         function getSortedLocCodes() {
             return Object.keys(locations).sort((a, b) => {
-                if (a === 'LMC') return -1; if (b === 'LMC') return 1;
+                if (a === 'KT') return -1; if (b === 'KT') return 1;
                 if (a === 'TST') return -1; if (b === 'TST') return 1;
                 return a.localeCompare(b);
             });
@@ -745,7 +745,7 @@
                                   (year === currentYear && month === todayMonth && day < todayDate);
                 if (isExpired) dayEl.classList.add('expired');
 
-                const defaultLoc = availableLocs[0] || 'LMC';
+                const defaultLoc = availableLocs[0] || 'KT';
 
                 dayEl.innerHTML = `
                     <div class="date">${day}</div>
@@ -785,7 +785,7 @@
                     const currentLocs = getSortedLocCodes();
                     if (currentLocs.length === 0) return;
 
-                    let currentLoc = this.getAttribute('data-loc') || 'LMC';
+                    let currentLoc = this.getAttribute('data-loc') || 'KT';
                     let currentIndex = currentLocs.indexOf(currentLoc);
                     let nextLoc = currentLocs[(currentIndex + 1) % currentLocs.length];
 
@@ -836,7 +836,7 @@
                 const date = dayEl.querySelector('.date')?.textContent;
                 if (!date) return; 
                 const shiftCode = dayEl.querySelector('.shift-select')?.value;
-                const locCode = dayEl.querySelector('.loc-btn').getAttribute('data-loc') || 'LMC';
+                const locCode = dayEl.querySelector('.loc-btn').getAttribute('data-loc') || 'KT';
                 
                 saveData[date] = { shiftCode, locCode };
                 if (shiftCode) {
@@ -934,13 +934,13 @@
             sortedLocs.forEach(code => {
                 const { desc, color } = locations[code];
                 const item = document.createElement('div');
-                item.className = `location-item ${code === 'LMC' ? 'active-loc' : ''}`;
+                item.className = `location-item ${code === 'KT' ? 'active-loc' : ''}`;
                 item.innerHTML = `
                     <div class="location-item-info">
                         <span class="location-item-code">${code}</span>
                         <span class="location-item-desc">${desc}</span>
                         <span class="loc-badge bg-${color}">標籤顏色：${colorNames[color] || '橙色'}</span>
-                        ${code === 'LMC' ? '<br><span style="font-size:12px;color:#ff9800;">默認地點</span>' : ''}
+                        ${code === 'KT' ? '<br><span style="font-size:12px;color:#ff9800;">默認地點</span>' : ''}
                     </div>
                     <div class="location-actions">
                         <button class="loc-btn-edit" data-code="${code}">編輯</button>
@@ -967,8 +967,8 @@
             document.querySelectorAll('.loc-btn-delete').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const code = e.target.dataset.code;
-                    if (code === 'LMC' || code === 'TST') {
-                        alert('⚠️ 核心預設地點「LMC」與「TST」不可刪除，但您可以使用【編輯】來修改它們！');
+                    if (code === 'KT' || code === 'TST') {
+                        alert('⚠️ 核心預設地點「KT」與「TST」不可刪除，但您可以使用【編輯】來修改它們！');
                         return;
                     }
                     if (confirm(`確定刪除地點【${code}】嗎？`)) {
@@ -991,8 +991,8 @@
                     alert(`⚠️ 地點簡寫【${code}】已存在，請換一個簡寫！`);
                     return;
                 }
-                if ((editLocCode === 'LMC' || editLocCode === 'TST') && editLocCode !== code) {
-                    alert('⚠️ 核心預設地點的「簡寫碼(LMC/TST)」不能更改，只能更改全名與顏色！');
+                if ((editLocCode === 'KT' || editLocCode === 'TST') && editLocCode !== code) {
+                    alert('⚠️ 核心預設地點的「簡寫碼(KT/TST)」不能更改，只能更改全名與顏色！');
                     return;
                 }
                 delete locations[editLocCode];
